@@ -2,10 +2,10 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>com.atech-software.pygmy-httpd</groupId>
-    <name>pygmy-httpd</name>
+    <name>Pygmy Httpd</name>
     <artifactId>pygmy-httpd</artifactId>
     <version>0.3.0-SNAPSHOT</version>
-    <packaging>jar</packaging>
+    <packaging>pom</packaging>
 
     <build>
         <plugins>
@@ -21,69 +21,60 @@
         </plugins>
     </build>
 
-    <dependencies>
-        <!-- Logging -->
+    <dependencyManagement>
+        <dependencies>
 
-        <!-- This is drop-in replacement for outdated log4j -->
-        <dependency>
-            <groupId>ch.qos.reload4j</groupId>
-            <artifactId>reload4j</artifactId>
-            <version>${log4j-reload.version}</version>
-        </dependency>
+            <dependency>
+                <groupId>com.atech-software.pygmy-httpd</groupId>
+                <artifactId>pygmy-core</artifactId>
+                <version>${project.parent.version}</version>
+            </dependency>
 
-        <!-- slf4j API -->
-        <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-api</artifactId>
-            <version>${slf4j.version}</version>
-        </dependency>
-
-        <!-- slf4j over log4j -->
-        <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-reload4j</artifactId>  <!-- slf4j-log4j12   -->
-            <version>${slf4j.version}</version>
-            <exclusions>
-                <exclusion>
-                    <groupId>ch.qos.reload4j</groupId>
-                    <artifactId>reload4j</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
+            <dependency>
+                <groupId>com.atech-software.pygmy-httpd</groupId>
+                <artifactId>pygmy-handlers</artifactId>
+                <version>${project.parent.version}</version>
+            </dependency>
 
 
-        <dependency>
-            <groupId>org.projectlombok</groupId>
-            <artifactId>lombok</artifactId>
-            <version>${lombok.version}</version>
-        </dependency>
+            <!-- Logging -->
+            <!-- This is drop-in replacement for outdated log4j -->
+            <dependency>
+                <groupId>ch.qos.reload4j</groupId>
+                <artifactId>reload4j</artifactId>
+                <version>${log4j-reload.version}</version>
+            </dependency>
 
-        <!-- https://mvnrepository.com/artifact/org.python/jython-slim -->
-        <!--        <dependency>-->
-        <!--            <groupId>org.python</groupId>-->
-        <!--            <artifactId>jython-slim</artifactId>-->
-        <!--            <version>2.7.3</version>-->
-        <!--            <scope>compile</scope>-->
-        <!--        </dependency>-->
+            <!-- slf4j API -->
+            <dependency>
+                <groupId>org.slf4j</groupId>
+                <artifactId>slf4j-api</artifactId>
+                <version>${slf4j.version}</version>
+            </dependency>
 
+            <!-- slf4j over log4j -->
+            <dependency>
+                <groupId>org.slf4j</groupId>
+                <artifactId>slf4j-reload4j</artifactId>  <!-- slf4j-log4j12   -->
+                <version>${slf4j.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>ch.qos.reload4j</groupId>
+                        <artifactId>reload4j</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
 
-        <!-- https://mvnrepository.com/artifact/org.python/jython -->
-        <dependency>
-            <groupId>org.python</groupId>
-            <artifactId>jython</artifactId>
-            <version>2.2</version>
-            <scope>compile</scope>
-        </dependency>
+            <dependency>
+                <groupId>org.projectlombok</groupId>
+                <artifactId>lombok</artifactId>
+                <version>${lombok.version}</version>
+                <scope>compile</scope>
+            </dependency>
 
-        <!-- https://mvnrepository.com/artifact/org.codehaus.groovy/groovy-console -->
-        <dependency>
-            <groupId>org.codehaus.groovy</groupId>
-            <artifactId>groovy-console</artifactId>
-            <version>3.0.21</version>
-            <scope>compile</scope>
-        </dependency>
+        </dependencies>
+    </dependencyManagement>
 
-    </dependencies>
 
     <developers>
         <developer>
@@ -97,6 +88,12 @@
             <id>ghouston</id>
             <email>ghouston at users.sourceforge.net</email>
         </developer>
+
+        <developer>
+            <name>Andy Rozman</name>
+            <id>andyrozman</id>
+            <email>andy at atech-software.com</email>
+        </developer>
     </developers>
 
     <properties>
@@ -107,6 +104,14 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
     </properties>
+
+    <modules>
+        <module>pygmy-core</module>
+        <module>pygmy-handlers</module>
+        <module>pygmy-docs</module>
+        <module>pygmy-examples</module>
+        <module>pygmy-handlers-extended</module>
+    </modules>
 
 
 </project>
