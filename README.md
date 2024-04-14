@@ -10,6 +10,31 @@ Pygmy is a 40KB portable http stack written in Java. It is ideal for PDA and res
 ### Note
 I just copied this project from sourceforge.net/pygmy-httpd. I have been using it for years now as part of my application. It does what I need, which is why I want to preserve it. Problem was that at the moment it "logs" everything to console, which is not ok. This is my intent to remedy that, by logging everything through Slf4j (Simple Logging Framework for Java), so that it can be controled through configuration.
 
+## Dependencies
+
+```
+	<repositories>
+		<repository>
+		    <id>jitpack.io</id>
+		    <url>https://jitpack.io</url>
+		</repository>
+	</repositories>
+```
+
+```
+<dependency>
+    <groupId>com.atech-software</groupId>
+    <artifactId>pygmy-core</artifactId>
+    <version>0.3.0</version>
+</dependency>
+<dependency>
+    <groupId>com.atech-software</groupId>
+    <artifactId>pygmy-handlers</artifactId>
+    <version>0.3.0</version>
+</dependency>
+```
+
+
 ## Old documentation (I will rewrite this, when I have time) 
 
 How to Run pygmy
