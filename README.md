@@ -1,3 +1,5 @@
+[![build](https://github.com/andyrozman/pygmy-httpd/actions/workflows/maven.yml/badge.svg)](https://github.com/andyrozman/pygmy-httpd/actions/workflows/maven.yml)
+
 # pygmy-httpd
 
 ### Description
