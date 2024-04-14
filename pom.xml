@@ -1,0 +1,112 @@
+<project>
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>com.atech-software.pygmy-httpd</groupId>
+    <name>pygmy-httpd</name>
+    <artifactId>pygmy-httpd</artifactId>
+    <version>0.3.0-SNAPSHOT</version>
+    <packaging>jar</packaging>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.1</version>
+                <configuration>
+                    <source>1.8</source>
+                    <target>1.8</target>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+
+    <dependencies>
+        <!-- Logging -->
+
+        <!-- This is drop-in replacement for outdated log4j -->
+        <dependency>
+            <groupId>ch.qos.reload4j</groupId>
+            <artifactId>reload4j</artifactId>
+            <version>${log4j-reload.version}</version>
+        </dependency>
+
+        <!-- slf4j API -->
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+            <version>${slf4j.version}</version>
+        </dependency>
+
+        <!-- slf4j over log4j -->
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-reload4j</artifactId>  <!-- slf4j-log4j12   -->
+            <version>${slf4j.version}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>ch.qos.reload4j</groupId>
+                    <artifactId>reload4j</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+
+
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <version>${lombok.version}</version>
+        </dependency>
+
+        <!-- https://mvnrepository.com/artifact/org.python/jython-slim -->
+        <!--        <dependency>-->
+        <!--            <groupId>org.python</groupId>-->
+        <!--            <artifactId>jython-slim</artifactId>-->
+        <!--            <version>2.7.3</version>-->
+        <!--            <scope>compile</scope>-->
+        <!--        </dependency>-->
+
+
+        <!-- https://mvnrepository.com/artifact/org.python/jython -->
+        <dependency>
+            <groupId>org.python</groupId>
+            <artifactId>jython</artifactId>
+            <version>2.2</version>
+            <scope>compile</scope>
+        </dependency>
+
+        <!-- https://mvnrepository.com/artifact/org.codehaus.groovy/groovy-console -->
+        <dependency>
+            <groupId>org.codehaus.groovy</groupId>
+            <artifactId>groovy-console</artifactId>
+            <version>3.0.21</version>
+            <scope>compile</scope>
+        </dependency>
+
+    </dependencies>
+
+    <developers>
+        <developer>
+            <name>Charlie Hubbard</name>
+            <id>charliehubbard</id>
+            <email>charliehubbard at users.sourceforge.net</email>
+        </developer>
+
+        <developer>
+            <name>Greg Houston</name>
+            <id>ghouston</id>
+            <email>ghouston at users.sourceforge.net</email>
+        </developer>
+    </developers>
+
+    <properties>
+        <slf4j.version>1.7.36</slf4j.version>
+        <lombok.version>1.18.30</lombok.version>
+        <log4j-reload.version>1.2.25</log4j-reload.version>
+
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+    </properties>
+
+
+</project>

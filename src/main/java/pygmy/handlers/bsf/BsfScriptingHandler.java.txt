@@ -1,0 +1,75 @@
+package pygmy.handlers.bsf;
+
+import pygmy.core.*;
+
+import java.io.*;
+import java.net.HttpURLConnection;
+import java.util.StringTokenizer;
+
+import org.apache.bsf.BSFManager;
+import org.apache.bsf.BSFException;
+
+public class BsfScriptingHandler extends AbstractHandler {
+
+    private BSFManager manager;
+    private File scriptDir;
+    private String languages;
+    private String classname;
+    private String extentions;
+    private String urlPrefix;
+
+
+    public boolean start(Server server) {
+        super.start(server);
+        registerLanguages();
+        manager = new BSFManager();
+        return true;
+    }
+
+    private void registerLanguages() {
+        StringTokenizer tokenizer = new StringTokenizer( languages, "," );
+        while( tokenizer.hasMoreTokens() ) {
+            String language = tokenizer.nextToken();
+            if( !BSFManager.isLanguageRegistered( language ) ) {
+                BSFManager.registerScriptingEngine( language, classname, extentions.split( "," ) );
+            }
+        }
+    }
+
+    protected boolean handleBody(HttpRequest request, HttpResponse response) throws IOException {
+        try {
+            File scriptFile = Http.translatePath( scriptDir, request.getUrl().substring( urlPrefix.length() ) );
+            String language = BSFManager.getLangFromFilename( scriptFile.getName() );
+            return executeScript( language, scriptFile, request, response );
+        } catch( BSFException e ) {
+            return false;
+        }
+    }
+
+    private boolean executeScript(String language, File scriptFile, HttpRequest request, HttpResponse response) throws IOException {
+        try {
+            manager.declareBean( "request", request, request.getClass() );
+            manager.declareBean( "response", response, response.getClass() );
+            manager.exec( language, scriptFile.getPath(), 0, 0, fetchScript( scriptFile ) );
+        } catch( BSFException e ) {
+            response.sendError( HttpURLConnection.HTTP_INTERNAL_ERROR, e.getMessage(), e );
+        }
+        return true;
+    }
+
+    private StringBuffer fetchScript(File scriptFile) throws IOException {
+        Reader reader = new BufferedReader( new FileReader( scriptFile ) );
+        try {
+            StringBuffer buffer = new StringBuffer();
+            char[] buf = new char[1024];
+            int length = 0;
+            while( length >= 0 ) {
+                length =  reader.read( buf );
+                buffer.append( buf, 0, length );
+            }
+            return buffer;
+        } finally {
+            reader.close();
+        }
+    }
+}

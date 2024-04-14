@@ -1,0 +1,790 @@
+<html>
+<head>
+<LINK REL ="stylesheet" TYPE="text/css" HREF="java-style.css" TITLE="Style">
+<style>
+<!--
+body {
+  background-color: #D5D9DD;
+}
+-->
+</style>
+</head>
+<body>
+
+<table cellpadding = "0" cellspacing="15" >
+<tr>
+<td valign="top" width="20%">
+<!---------------- Nav Bar ------------------>
+<div class="title">
+pygmy
+</div>
+<div class="text">
+<a href="http://sourceforge.net/projects/pygmy-httpd/">Project</a><br>
+<a href="download.html">Download</a><br>
+<a href="index.html">Docs</a><br>
+<a href="api/index.html">Api</a><br>
+<a href="license.html">License</a></br>
+</ul>
+<br>
+<a href="http://sourceforge.net">
+<img src="http://sourceforge.net/sflogo.php?group_id=87807&amp;type=1" width="88" height="31" border="0" alt="SourceForge.net Logo" />
+</a>
+</div>
+<!---------------- End Nav Bar ------------------>
+</td>
+<td width="80%">
+<!-- -----------------Title bar------------------- -->
+<div class="title">
+<font class="title">Docs</font>
+</div>
+
+<!-- -----------------Main text------------------- -->
+
+<div class="text">
+<p>
+Pygmy is a tiny webserver ment for embedding into applications.  The core of the server around 40KB.  It provides a flexible
+way to plug-in features, similiar to apache modules or servlets, but it's a much more lightweight API.  However, pygmy isn't a
+replacement for servlet technology.  Servlet containers can be integrated into pygmy, and replace other heavyweight
+http servers.  Pygmy can scale it's functionality down to the bare neccessities.  Features can be optionally added
+and removed to reduce pygmy's already small binary size.  Pygmy tries to err on the side of simplicity, but allow for
+enough flexiblity so that it can be tightly integrated with applications.
+</p>
+<p>
+Pygmy is a departure from most web servers because it gracefully scales features to meet your needs.  The core of
+pygmy only knows how to read http requests.  Creating responses to the http requests are the job of the
+Handler(s).  The default Server implementation is controlled by a configuration file.  Running the Pygmy web server is
+as simple as running the following:
+</p>
+<p>
+<div class="code">
+java -jar pygmy-core.jar
+</div>
+
+<p>
+This starts the server listenning on port 80.  Point your browser to this page, and you should see this text.  To
+configure the server you can include a couple of command-line options.
+</p>
+
+<div class="code">
+<table cellpadding="2">
+<tr><td nowrap="yes">-http.port</td><td>controls the port the server listens on.</td></tr>
+<tr><td nowrap="yes" valign="top">-config</td><td>controls the configuration file the server uses to initialize the Handler classes.
+This should be the path to file either on the filesystem, or within the classpath.  This option can be used more than once.</td></tr>
+<tr><td nowrap="yes">-<i>&lt;property&gt;</i></td><td>This option overrides any property in the configuration file.</td>
+</table>
+</div>
+
+<p>
+Changing how the server reacts is as simple as changing the configuration file the server reads.  Add the command-line
+option <fixed>-config</fixed> to the command-line with a filename like:
+</p>
+
+<div class="code">
+java -jar pygmy-core.jar -config foo.properties
+</div>
+
+<p>
+Now your server will use foo.properties to configure the server.  By default there
+are five handlers included:  FileHandler, DirectoryHandler, ResourceHandler, PrintHandler, and DefaultChainHandler.
+FileHandler retrieves files from a directory and sends them over http.  DirectoryHandler shows the listings for a
+directory.  ResourceHandler serves up resources out of the classpath or a jar file very similiar to FileHandler.
+PrintHandler echos back the http request sent to the URL.  DefaultChainHandler allows the user to create a
+chain of Handlers, much like Chain of Responsibility whereby each Handler is called in succession to see if it
+wants to handle the http request.  Once a Handler has elected to handle the request the traversal of the chain stops
+and the response is returned.
+</p>
+<p>
+Let's look at an example configuration file:
+</p>
+
+<div class="code">
+<pre>
+http.port=80
+handler=root
+
+root.class=pygmy.handlers.ResourceHandler
+root.url-prefix=/
+root.resourceMount=/html
+
+mime.html=text/html
+mime.zip=application/x-zip-compressed
+mime.gif=image/gif
+mime.jpeg=image/jpeg
+mime.jpg=image/jpeg
+</pre>
+</div>
+
+<p>
+The first section of the configuration is configuring the server, like the port it should listen on.  The
+handler property is the name of the handler the server should use to handle requests.  Notice root.class property holds
+the name of a java class.  The server will instantiate this class by looking for the first constructor.  All Handler's can
+only define one constructor.  Generally, most Handlers will simply define a no-arg constructor.  However, it is possible to
+have constructors defined with other parameters.  That is a more <a href="#advanced">advanced topic</a> to be discussed
+later.  The second part of  the configuration file, the root.* properties, is used by the actual ResourceHandler.  These
+properties are Handler dependant; they will be different for each Handler.  The root.url-prefix is a commonly seen
+property.  It defines which url this handler will respond to.  This is important when multiple handlers are being used
+in the system, more on this later.  The next property root.resourceMount controls where in the classpath the
+ResourceHandler will server up files from.  It's like a web directory in an normal server.  Normal web server's map a
+URL of / to some directory in its configuration.  ResourceHandler maps a URL to a place in the classpath.  Finally,
+the last section deals with mime types.  The server will only serve up files that it has a mime-type for.  This just a
+small list of all the mime-types out there.
+</p>
+<p>
+Now let's look at a more complex example of configuration.  What would a configuration look like for multiple Handlers?
+</p>
+
+<div class="code">
+<pre>
+http.port=80
+handler=chain
+
+chain.chain = file directory resource
+chain.class=pygmy.handlers.DefaultChainHandler
+
+file.class=pygmy.handlers.FileHandler
+file.url-prefix=/
+file.root=C:/temp
+
+directory.class=pygmy.handlers.DirectoryHandler
+directory.root=${file.root}
+directory.url-prefix=${file.url-prefix}
+directory.template.header=/header.html
+directory.template.footer=/footer.html
+
+resource.class=pygmy.handlers.ResourceHandler
+resource.resourceMount=/html
+resource.url-prefix=${file.url-prefix}
+
+mime.html=text/html
+mime.zip=application/x-zip-compressed
+mime.gif=image/gif
+mime.jpeg=image/jpeg
+mime.jpg=image/jpeg
+</pre>
+</div>
+
+<p>
+The same port, log, handler are present as in the last example.  This time the root handler is called <i>chain</i>.  Notice
+that it is a DefaultChainHandler, and that it uses different properties than the ResourceHandler.  Notably, it contains
+a .chain property.  It's value is names of the other handlers in this chain.  The file.class property is a FileHandler,
+and it's properties are .url-prefix, and a .root.  The .url-prefix is the same as the previous example.  The .root property
+is the file path to the web root.  The directory handler has .root, .url-prefix, and two other properties .template.header
+and .template.footer.  These are used to stylize the text tacked onto the beginning and end of the HTML generated for
+the directory listing.  These properties are URLs to load these two files from.  Finally, the resource handler has similiar
+properties as the example before.
+</p>
+
+<p>
+Notice the syntax used in the directory.root property: directory.root=${file.root}.  This means use the value of the
+property file.root as directory.root's value.  This allows you to configure a set of handlers that share some similiar
+configuration.  Surrounding string with ${} will substitute the value of a property in it's place, unless that property
+does not exist in which case it will ignore it.  For example:
+</p>
+
+<div class="code">
+<pre>
+foo=bar
+subst=Let's go to the ${foo}
+</pre>
+</div>
+
+<p>
+The property subst's value will be <i>Let's go to the bar</i>.
+</p>
+
+<p>
+The difference between this example and the last is there are more handlers.  This configuration will server files from
+c:\temp and provide a directory listing from c:\temp.  Finally, it will serve files from a class-path that begin with
+/html.  There is no limit to the size of the handlers that can be used.  There can be chains of chains and so on and
+so on.  There can be any number of FileHandlers, DirectoryHandlers, or ResourceHandlers all with different properties.
+The real power is writing your own handlers and plugging them into the system, however, I'll leave that as an exercise
+to the reader.
+</p>
+
+<h3>Handlers</h3>
+
+<p>
+All behavior written for pygmy is included in Handlers, for example, serving files, listing directories, etc.
+Handlers implement the pygmy.core.Handler interface which are the following three methods:
+</p>
+
+<div class="code">
+<table>
+<tr><td>public boolean initialize( String handlerName, Server server );<br></td></tr>
+<tr><td>public String getName();<br></td></tr>
+<tr><td>public boolean handle( Request request, Response response ) throws IOException;<br></td></tr>
+<tr><td>public boolean shutdown( Server server );<br></td></tr>
+</table>
+</div>
+
+<p>
+The intialize() method is called when the Server is initialized prior to the first request being handled.  The
+two parameters passed to the intialize() method are the Server instance and the name of this handler.  The handler's
+name is used to access this handler's configuration.  Most handlers will need to remember their own name so that they
+can read changes in their configuration at runtime.  At the end of the initialize() method, the handler should return
+true if initialization was successful.
+</p>
+
+<p>
+The handle() method handles http requests coming in from the network.  It is very similiar to a servlet's doPost or
+doGet methods.  However, the server calls this method regardless of http command (i.e. get, head, put, or post).
+Normally, handle() method will look at the request and decided whether or not it will handle the request.  If it
+chooses to respond to the request it will use the HttpResponse object to send a reply, and return true.  If it does
+not wish to handle the request it simply returns false.  Returning true or false is very important for predictable
+operation.  Returning false allows for other handlers to be called when they are a part of a chain.
+</p>
+
+<p>
+The shutdown() method is called when the Server is closing down all the EndPoints and exiting the process.  This method
+is called to allow for Handlers to clean themselves up so a clean shutdown can occur.  For example, a Handler might need
+to close down open sockets, running threads, or open files before the Server can shutdown.
+</p>
+
+<h3> Handler Example </h3>
+
+<p>
+Handlers sound easy, but let's look at a concrete example to see how we might actually create one.  In this example I'm
+going to build a Web authenication handler that implements the RFC 2617 web protocol.  We are going to stick to just
+Basic web authentication to keep it simple.  I leave Digest authentication as an exercise to the reader.
+<b><font color="red">WARNING:</font>  The code written here is for example only.  Please do not use this code in production
+environments because it is NOT SECURE!</b>  If you want basic web authentication please use BasicWebAuthHandler
+supplied with pygmy.  Also check out SSLServerSocketEndPoint so your username and passwords can't be
+sniffed.  This is just an example to demonstrate how some would write a Handler.  It stores passwords
+in the clear which is a huge security hole.
+</p>
+
+<p>
+We want to create a Handler that sits in front of other sets of handlers and protects requests to specific URLs.  Let's
+start with writing the configuration file first, and then move onto actually implementing the Handler.  Since everything in
+the pygmy world that creates responses are Handlers, our webauth handler could be protecting files, directories, or
+some sort of specialized Handler.  The point is we don't know what's behind us which is very important for the reusability
+of this Handler.  Let's take a look at a simple configuration:
+</p>
+
+<div class="code">
+<pre>
+http.port=80
+handler=chain
+
+chain.chain = auth resource
+chain.class=pygmy.handlers.DefaultChainHandler
+
+auth.class=pygmy.handlers.BasicWebAuthHandler
+auth.url-prefix=/
+auth.realm=monkey town
+auth.user=monkey
+auth.password=bananna
+
+resource.class=pygmy.handlers.ResourceHandler
+resource.resourceMount=/html
+resource.url-prefix=/
+
+mime.html=text/html
+mime.zip=application/x-zip-compressed
+mime.gif=image/gif
+mime.jpeg=image/jpeg
+mime.jpg=image/jpeg
+</pre>
+</div>
+
+<p>
+So this configuration file creates a single chain holding two handlers named: <i>auth</i> and <i>resource</i>.  The <i>auth</i>
+handler is our web authentication handler we will build.  The resource handler is the same as the default one created by
+Server.  At the end of this tutorial restart your server with this configuration file, hit URL
+<a href="http://localhost/">http://localhost/</a>, login with the user and password above, and you should get
+this document.
+</p>
+
+<p>
+Let's create a new class called pygmy.handlers.BasicWebAuthHandler.  Here is the first part of the code:
+</p>
+
+<div class="code">
+<pre>
+public class BasicWebAuthHandler extends AbstractHandler {
+
+    public static final ConfigOption REALM_OPTION = new ConfigOption( "realm", "", "The default realm to authenticate against." );
+    public static final ConfigOption USER_OPTION = new ConfigOption( "user", true, "The username you will authenticate." );
+    public static final ConfigOption PASSWORD_OPTION = new ConfigOption( "password", true, "The password for the given username." );
+
+    String realm;
+    String user;
+    String password;
+
+</pre>
+</div>
+
+<p>
+Every handler needs some sort of configuration options the user can control.  The ConfigOption class is a
+new addition to pygmy.  It helps encapsulate properties this handler allows users to change.  It also helps
+the user when he misconfigures an option.  ConfigOption classes can be required, supply defaults, and a
+control a user friendly string to provide a description about the ConfigOption.  It's highly recomended you
+use these in place of hard coded strings so that users can get feedback as to the options supplied by the
+to the handler.
+</p>
+
+<p>
+Notice this class extends AbstractHandler.  AbstractHandler is a class that implements the Handler
+interface, and provides some extra functionality for retrieving properties and managing common data.  It is advantageous
+to extend this class whenever possible.  We will accept the default initialize() method provided by AbstractHandler.
+Here is the code from AbstractHandler for illustrative purposes.
+</p>
+
+<div class="code">
+<pre>
+    public boolean initialize(Server server, String handlerName) {
+        this.server = server;
+        this.handlerName = handlerName;
+
+        realm = REALM_OPTION.getProperty( server, handlerName );
+        username = USER_OPTION.getProperty( server, handlerName );
+        password = PASSWORD_OPTION.getProperty( server, handlerName );
+
+        return true;
+    }
+</pre>
+</div>
+
+<p>
+The AbstractHandler.initialize() method is fairly straight forward.  The handlerName variable passed to the initialize()
+method is the name of this Handler's instance.  We will want to save this into a member variable for safe keeping.  Notice the
+final line of this method returns true.  This signifies to the Server that this Handler was able to initialize
+properly.  Returning false would disable this Handler from getting requests, but the Server would continue to work.
+</p>
+
+<p>
+Next we will actually implement the handle() method.  This is quite a bit more complex.  First let's discus what Basic
+web authentication is.  When a web browser sends a request to a protected URL.  The web server looks at the http request
+headers to see if the browser is sending an <b>Authorization</b> header.  It would look something like this:
+</p>
+
+<div class="code">
+<pre>
+GET /foo/bar/protected.html HTTP\1.1
+User-Agent: Mozilla
+Authorization: Basic QZfjwiajfas==
+....
+</pre>
+</div>
+
+<p>
+If there is a header, it is decoded and check against the known username(s) and password(s).  If it matches one, then
+request is allowed to continue.  If either the password was wrong or the header was absent, it sends a <b>401</b> with a
+<b>WWW-Authenticate</b> header to the client.  At this point your web browser prompts you for a username and password,
+and sends the request back including the <b>Authorization</b> header.  The exchange would look something like the
+following:
+</p>
+
+<div class="code">
+<b>Initial Request:</b><br>
+<pre>
+GET /foo/bar/protected.html HTTP\1.1
+User-Agent: Mozilla
+....
+</pre>
+<b>Server asks for authentication:</b><br>
+<pre>
+401 Authentication Required
+WWW-Authenticate: Basic realm="monkey business"
+....
+</pre>
+<b>After your web browser prompts for user name and password, it sends the request again:</b><br>
+<pre>
+GET /foo/bar/protected.html HTTP\1.1
+User-Agent: Mozilla
+Authorization: Basic QZfjwiajfas==
+....
+</pre>
+</div>
+
+<p>
+The <b>Authorization</b> header's value is "Basic <i>username</i><b>:</b><i>password</i>", but the user name and
+password is BASE64 encoded.  The server will decode that text, and check the user name and password against the
+user's it knows about.  If their is a successful match he sends the URL onto be processed.  Now let's look at the
+code for this:
+</p>
+
+<div class="code">
+<pre>
+    protected boolean handleBody(HttpRequest request, HttpResponse response) throws IOException {
+        String auth = request.getRequestHeader("Authorization");
+        if( auth == null ) {
+            return askForAuthorization(request, response);
+        }
+        int index = auth.indexOf(" ");
+        if( index < 0 ) {
+            return askForAuthorization( request, response );
+        }
+        auth = auth.substring( index + 1 );
+        BASE64Decoder decoder = new BASE64Decoder();
+        auth = new String( decoder.decodeBuffer( auth ) );
+        String[] credentials = auth.split(":");
+        if( !credentials[0].equals( user ) ||
+            !credentials[1].equals( password ) ) {
+            return askForAuthorization( request, response );
+        }
+        return false;
+    }
+
+    private boolean askForAuthorization(HttpRequest request, HttpResponse response) {
+        response.addHeader( "WWW-Authenticate", "Basic realm=\"" + realm + "\"" );
+        response.sendError( 401, "Authentication required.");
+        return true;
+    }
+</pre>
+</div>
+
+<p>
+The first you might notice is that we didn't implement the handle() method in the Handler interface.  Instead we overode
+the handleBody() method from AbstractHandler.  Notice also that the two parameters HttpRequest and HttpResponse are
+passed to handleBody() instead of Request and Response.  AbstractHandler is a handy little class that makes writing
+Handlers easier for http based Handlers.  It implements the handle() and calls handleBody() when two conditions are met.
+First thing AbstractHandler.handle() checks is that the Request and Resopnse parameters are HttpRequest and HttpResponse.
+Next it checks that the URL being requested starts with this Handler's prefix.  If both of those conditions pass then it
+calls handleBody() which subclasses should overide.  This is something that lots of Handlers will need to do so using the
+AbstractHandler as your super class can be very helpful when you go to create your own Handlers.  An important note is
+that every request regardless of URL can be handled by any Handler.  Overiding the handle() method would allow this.
+</p>
+
+<p>
+Now let's look at the code in the handleBody() method.  First the handler checks the header for the <b>Authorization</b>.
+If it is not there he requests for authentication.  Next he parses out the credentials, and decodes the BASE64
+representation.  Finally he checks this user name and password against the configured user and password.  If they don't
+match up, he asks for authentication.  Notice that this handler doesn't send anything back if the user and password were
+correct.  It simply falls through and returns false.  This allows the next handler in the chain to process the actual
+request.  This is an interesting difference because this allows the handler to be independant from how the request is
+handled.  Also notice that the Handler doesn't read his configuration from server.getProperty() method.  Instead, he
+uses  request.getProperty().  HttpRequest has a properties per request.  This allows one handler to process a request
+and put the results into the properties, but not return anything to the user.  Then a handler further in the chain can
+use those results and return an actual request.  However, notice that the properties from the server configuration are
+accessible from here too!  The server configurations are like the defaults, but they can be overridden by putting
+something in the request's properties.  For example, a good addition to our BasicWebAuthHandler would be to put the
+username and password into the request properties.  That way another handler could pull those out, and include a
+specialized greeting in some HTML he generates, rewrite URLs to remember users, or create a session for this user.
+</p>
+
+<p>
+An important thing to note about Handlers is that they are multithreaded.  There can be any number of threads processed
+by a Handler at once.  In the above code notice that he creates a BASE64Decoder each time the handle method is called.
+This is done so that two threads aren't using the decoder at the same time.  If this was stored as a member variable it
+would be possible for two threads to manipulate it at the same time.
+</p>
+
+<p>
+Finally, let's not forget about the shutdown() method.  Since we extended AbstractHandler, we don't have to write this method.
+We would only need to override this method if our Handler required any clean up (i.e. if we had any sockets that this Handler
+opened, or database connections, etc).
+</p>
+
+<p>
+Now we can 'ant build package'.  Run the server and hit the URL <a href="http://localhost/">http://localhost/</a>:
+</p>
+
+<div class="code">
+java -jar pygmy-core.jar -config auth.properties
+</div>
+
+<h3>EndPoint</h3>
+
+<p>
+EndPoints are what take in the Requests from somewhere.  They are responsible for reading from the socket or file
+to produce Requests (in these examples we are creating HttpRequests, but really any Request is possible).  They also
+control threading and honor keepAlives.  Generally, most users won't require the need to write their own EndPoint.
+However, this allows users to define new protocols for which handlers can respond to.  All EndPoints implment the
+pygmy.core.EndPoint interface which looks like the following:
+</p>
+
+<div class="code">
+<table>
+<tr><td>public void initialize( String name, Server server ) throws IOException;<br></td></tr>
+<tr><td>public String getName();<br></td></tr>
+<tr><td>public void start();<br></td></tr>
+<tr><td>public void shutdown( Server server );<br></td></tr>
+</table>
+</div>
+
+<p>
+It is very similiar to the Handler interface.  The intialize() method is called when the server is initialized.  All
+EndPoints will be initialized prior to servicing Requests.  The start() method is called once the Server has properly
+initialized and its a signal to start listening on sockets, create threads, etc.  Finally the shutdown() method is
+called to allow for the EndPoint to cleanup before shutting down.
+</p>
+
+<p>
+How do you control which endpoints are instantiated?  The above configurations never mentioned what EndPoints the server
+should install.  The server looks for the property <font class="code">endpoints</font> in the
+configuration.  If it fails to find the <font class="code">endpoints</font> property it creates a default EndPoint
+named <font class="code">http</font> of type <font class="code">pygmy.core.ServerSocketEndPoint</font>.  Notice in the
+above configurations the paramter <font class="code">http.port</font>.  This line is changing the .port property on the
+instance of the default EndPoint to control what TCP port to create the listenning socket.
+</p>
+
+<p>
+If the server finds the <font class="code">endpoints</font> property, then it parses the value for the names of all
+the EndPoints that should be installed in the server.  The <font class="code">endpoints</font> property is a space
+seperated list of names.  It then creates them by looking for a configuration property
+<i>&lt;name of the endpoint&gt;.class</i> to know what class to instantiate.  EndPoints must have a no-argument
+constructor in order to be instantiated.
+</p>
+
+<p>
+Here is a simple example of changing the endpoints a server will use:
+</p>
+
+<div class="code">
+<pre>
+handler=aHandler
+endpoints=http foo
+http.port=80
+http.class=pygmy.core.ServerSocketEndPoint
+
+foo.bar=baz
+foo.class=my.package.SomeOtherEndPoint
+
+aHandler.class=my.package.SuperDuperHandler
+
+mime.html=text/html
+mime.zip=application/x-zip-compressed
+mime.gif=image/gif
+mime.jpeg=image/jpeg
+mime.jpg=image/jpeg
+</pre>
+</div>
+
+<p>
+EndPoints will create the instances implementing the Request and Response abstract classes.  Then they simple make a
+call to the Server posting the request and response to the Handlers.  Here is an example of what an EndPoint might look
+like:
+</p>
+
+<div class="code">
+<pre>
+public void run() {
+   // EndPoints will be using a thread for servicing sockets etc.
+   // This is usually handled by the implementing Runnable interface so that's this
+   // example starts in the run() method.
+   while( true ) {
+      Request request = ...create a request from something...
+      Response response = ...create a response class...
+      server.post( ...create an instance of runnable to handle the request... );
+   }
+}
+</pre>
+</div>
+
+<p>
+The above example demonstrates how an EndPoint interacts with whatever it's accepting request from.  It will also create
+a response object that corresponds to the request object it created.  Then it calls server.post( Runnable ) to post a
+piece of code to the server to handle the request.  Calling this takes the instance of Runnable and uses the Server's
+ThreadPool to service the request.  This way EndPoints don't have to control threading, and it boosts performance by
+removing the overhead of creating and destroying threads per request by using this method.  If an EndPoint wants to
+implement their own threading then it can simply call server.post( Request, Response ) method itself.  However, it's
+easier and better performance wise to use the former method call rather than the later in EndPoints.
+</p>
+
+<p>
+<i>NOTE:  EndPoints that implement Runnable interface instead of subclassing Thread can easily migrate to using the
+server's ThreadPool instead of creating their own thread.  Since doing this will subtract from the number of threads
+available for servicing requests.  The user might want to up the ThreadPool size to account for EndPoints taking Threads
+from the pool.</i>
+</p>
+
+<h3> Pygmy and Mime Types </h3>
+
+<p>
+In the above configurations we have several options in the config file that begin with mime.  These are the mime types
+that this Server understands.  It is important to include all the mime types you want your Server to recognize,
+otherwise you'll spend several hours scrathing your head as to why pygmy does see your .png files when they are right
+there in the directory.  To help out pygmy includes in its distribution a mime-types.properties file that includes lots
+of mime-types.  You can copy the contents of this file, and include it in your configuration file.
+</p>
+
+<h3>Logging</h3>
+
+<p>
+Pygmy supports robust, feature rich logging.  Configuring logging can take many forms, and you can actually limit
+logging to particular Handlers, EndPoints, or pygmy core to isolate messages.  Pygmy uses Sun's logging package which
+is sufficient for most logging configurations.  Logging is just like any other configuration file.  It can be a seperate
+file handed to pygmy through <fixed>-config</fixed> command line parameter, or the properties can be embedded in a
+config file.  One potential point of confusion is that <b>logging Handlers</b> are <b>different</b> than
+<b>pygmy Handlers</b>.  There is the possibility for confusion when we talk about logging because, unfortunately, Sun
+uses Handler nomenclature for their logging package too.  So for just this section a reference to <b>Handler</b> means
+a </b>logging Handler</b> <b>NOT</b> pygmy Handler.  Using pygmy Handlers in the logging configuration will definitely
+result in a non-working server.
+</p>
+
+<p>
+The simplest configuration contains these two lines:
+</p>
+
+<div class="code">
+<pre>
+.level= FINEST
+handlers= java.util.logging.ConsoleHandler
+</pre>
+</div>
+
+<p>
+This defines the logging level to finest which is like debug in every other logging package.  This will be the most
+verbose.  Usually you won't want to use this except in debugging your configuration and development.   The logging
+levels in terms of least verbose to most verbose is: SEVERE, WARNING, INFO, CONFIG, FINE, FINER, FINEST.  The next line
+configures where logging will be sent.  The handlers property is a comma seperated list of classnames of Handlers.  In
+this example, all logging messages will be printed on System.err on the console.
+</p>
+
+<p>
+That's a simple example of configuring logging.  Let's change the format of what is being logged.  In order to do that
+we would use this configuration:
+</p>
+
+<div class="code">
+<pre>
+.level= FINEST
+handlers= java.util.logging.ConsoleHandler
+java.util.logging.ConsoleHandler.formatter = java.util.logging.SimpleFormatter
+</pre>
+</div>
+
+<p>
+The new line controls the format of the Handler will log.  This property sets the formatter for the logging messsages.
+It is logging using the SimpleFormatter which outputs simple text consisting of 1 or 2 lines.  Other formatters include
+java.util.logging.XMLFormatter which outputs XML log messages.
+</p>
+
+<p>
+Let's look at one last configuration that allows us to output log messages to a file for safe keeping.
+</p>
+
+<div class="code">
+<pre>
+.level= FINEST
+handlers= java.util.logging.FileHandler, java.util.logging.ConsoleHandler
+
+# default file output is in user's home directory.
+java.util.logging.FileHandler.pattern = %h/java%u.log
+java.util.logging.FileHandler.limit = 50000
+java.util.logging.FileHandler.count = 1
+java.util.logging.FileHandler.formatter = java.util.logging.XMLFormatter
+
+java.util.logging.ConsoleHandler.level = INFO
+java.util.logging.ConsoleHandler.formatter = java.util.logging.SimpleFormatter
+</pre>
+</div>
+
+<p>
+This configuration uses to Handlers to output messages to a XMLFormatter and a SimpleFormatter.  This configuration also
+creates a log file in the user's home directory for logging messages.  The limit property controls how large a
+configuration file to write.  This is useful for log rotating where no one file will be larger than 50,000 bytes.  The
+next property controls how many log files to create when rotating logs.  In this case there will only be one, so it will
+only keep a log size of 50,000 bytes.  A limit of 0 (zero) has no limit.  The default is zero or no limit.  The next
+property controls the formatter for this Handler which is a XMLFormatter.  Notice the last two lines.  One is familiar,
+but the level property on this Handler sets this Handler to a higher logging level than the property .level defines
+which is FINEST.  This means that the log messages sent to the console are will show INFO and higher.  However, the
+FileHandler will log all messages since it doesn't override the .level property.
+</p>
+
+<h3> Customizing Pymgy's Distribution </h3>
+
+<p>
+The core of the pygmy server is very small.  By itself that doesn't provide any Handlers.  So, in order to add request
+processing functionality you will have to include another jar file with Handlers.  Pygmy is seperated into three
+jars, pygmy-core, pygmy-handlers, and pygmy-docs.  The only jar file that is absolutely required is pygmy-core,
+however, as stated above this does not include any Handlers so you will have to include at least one more jar file
+in your final distribution.  It does not have to be the pygmy-handlers.jar that comes with pygmy's distribution.
+You can package you own pygmy-handlers.jar within your project and use that with pygmy.
+</p>
+
+<p>
+Pygmy does not require any particular directory structure.  This makes it very easy to adapt into your own projects.
+If you use the classpath included in pygmy jar file then all you have to do is place pygmy-core.jar and
+pygmy-handlers.jar in the same directory.  You can optionally add a pygmy-docs.jar (either one you created
+or the distribution's pygmy-docs.jar).
+</p>
+
+<p>
+Finally, you probably will include your own configuration file.  This can be distributed on the file system as a seperate
+file, or it can be packaged into one of the jar files in the classpath.  This is helpful is you don't want users
+manipulating your configuration.
+</p>
+
+<p>
+Running pygmy can take many forms.  The way you choose to run it depends on how you have choosen to package the file.
+You can run pygmy using the -jar option like:
+</p>
+
+<div class="code">
+java -jar pygmy-core.jar -config foo.properties
+</div>
+
+<p>
+When pygmy is run this way it uses the classpath within the pygmy-core.jar file, which includes jar files:
+pygmy-handlers.jar and pygmy-docs.jar.  This configuration expects these jar files to be in the same directory as
+pygmy-core.jar.  You can also load server configuration from the actual jar file.  The Server's algorithm first looks
+for the config file on the file system, then tries to load it from the classpath.
+</p>
+
+<div class="code">
+java -jar pygmy-core.jar -config some/path/inside/the/jar/file/foo.properties
+</div>
+
+<p>
+You may override the classpath within the pygmy-core.jar file, by using the -cp or -classpath option on the commandline:
+</p>
+
+<div class="code">
+java -cp pygmy-core.jar:pygmy-handlers.jar:pygmy-docs.jar:my.jar pygmy.core.Server -config foo.properties
+</div>
+
+<p>
+You can even use your own main program and instantiate a Server object, however, at this point you are in charge
+of finding and loading the Server's configuration, and the -config and -port command line options are not available.
+See the <a href="api/index.html">javadoc</a> for the Server's API.
+</p>
+
+<a name="advanced"></a>
+<h3> Advanced Handler Construction </h3>
+
+<p>
+Sometimes it's impotant that you be able to share some objects between several handlers.  However, handlers only
+parameterize themselves from the server's configuration.  If you need handlers to share an instance of an object you
+wouldn't be able to do that.  This is usually important when pygmy is embedded within a larger application.  Normally
+larger applications will want to expose some object to http or some other protocol.  Handlers can easily require communicate
+dependant data through their constructor.  When pygmy reads the classname in the server config it will analyze the
+constructor for the Handler.  If it requires any particular classes to be passed as parameters then it will try to find
+instance objects registered with the server that share the same type.  It will then use those objects as parameters to
+the Handler's constructor.  That way several Handlers can very easily describe their dependancies and share underlying
+instances between each other.
+</p>
+
+<p>
+This depends on the Server being properly configured by an outside application.  By default pygmy doesn't allow for
+this type of construction.  Or to look at it another way, pygmy will simply pass null values to your constructor if your
+Handler is used in pygmy's default implementation.  However, when pygmy is embedded within a larger application, the
+larger application can share its data with the Handlers through this mechanism.
+</p>
+
+<p>
+In order for programs to take advantage of this they simply call the Server.registerComponent() passing the object that
+the program wishes to make available to Handlers prior to calling Server.start().  Handlers then simply declare a
+constructor that takes an argument of the type registered with the Server, and viola pygmy will construct the Handler
+with that component.
+</p>
+
+<p>
+This approach does have some limitations:
+</p>
+
+<ul>
+<li>No primitive types in constructors</li>
+<li>Only one constructor per Hander</li>
+<li>No more than one instance of any given type (if you need more then define a manager of objects and pass that to each Handler)</li>
+<li>Only works for embedded programs - although this might change in future releases</li>
+</ul>
+
+</div>
+</div>
+</td>
+</tr>
+</table>
+</body>
+</html>

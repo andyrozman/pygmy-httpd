@@ -1,0 +1,71 @@
+<?xml version="1.0"?>
+<project>
+
+    <pomVersion>3</pomVersion><!-- do not change -->
+
+    <name>pygmy-httpd</name>
+    <id>pygmy</id>
+    <groupId>pygmy</groupId>
+    <currentVersion>0.1-alpha-dev</currentVersion>
+
+    <organization>
+        <!-- appears in copyright -->
+        <name>pygmy-httpd project at sourceforge.net</name>
+        <!-- appears top left of banner -->
+        <url>http://sourceforge.net/projects/pygmy-httpd/</url>
+        <!--
+        <logo>/images/arca.jpg</logo>
+        -->
+    </organization>
+    <!-- appears in copyright -->
+    <inceptionYear>2003</inceptionYear>
+    <package>${pom.artifactId}</package>
+
+
+    <!-- appears top right of banner -->
+    <!--
+        <logo>/images/logo_arara.jpg</logo>
+    -->
+    <shortDescription>A small server in Java.  Currently supports HTTP and HTTPS.</shortDescription>
+    <description>
+        Pygmy is a tiny webserver meant for embedding into applications. The core of the server around 30KB. It provides a flexible way to plug-in features, similiar to apache modules or servlets, but it's a much more lightweight API. However, pygmy isn't a replacement for servlet technology. Servlet containers can be integrated into pygmy, and replace other heavyweight http servers. Pygmy can scale it's functionality down to the bare neccessities. Features can be optionally added and removed to reduce pygmy's already small binary size. Pygmy tries to air on the side of simplicity, but allow for enough flexiblity so that it can be tightly integrated with applications.
+    </description>
+
+    <issueTrackingUrl>http://sourceforge.net/tracker/?group_id=87807</issueTrackingUrl>
+    <siteAddress>pygmy-httpd.sourceforge.net</siteAddress>
+
+    <mailingList></mailingList>
+
+    <developers>
+        <developer>
+            <name>Charlie Hubbard</name>
+            <id>charliehubbard</id>
+            <email>charliehubbard at users.sourceforge.net</email>
+            <organization></organization>
+        </developer>
+
+        <developer>
+            <name>Greg Houston</name>
+            <id>ghouston</id>
+            <email>ghouston at users.sourceforge.net</email>
+            <organization></organization>
+        </developer>
+    </developers>
+
+    <build>
+        <sourceDirectory>srcs</sourceDirectory>
+        <resources>
+            <!-- core jar -->
+            <resource>
+                <!--                <includes>-->
+                <!--                    <include>**/core/**/*.class</include>-->
+                <!--                    <include>**/config</include>-->
+                <!--                </includes>-->
+                <excludes>
+                    <exclude>pygmy/handlers/*.class</exclude>
+                </excludes>
+            </resource>
+        </resources>
+    </build>
+
+</project>

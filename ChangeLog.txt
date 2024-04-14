@@ -1,0 +1,22 @@
+Version 0.2
+-----------
+* Added ConfigOption class so that Handler's could tell the user whenever they had properties misconfigured.  Helps the user from having to read JavaDoc.
+* Add more configuration for SSL sockets in the SSLServerSocketEndPoint for available cipher suites, SSL protocols, and client authentication.
+* Added logging IP Address and URL requested so you can see access logs for publicaly visible internet connections.
+* Added a thread pool to the server to increase server performance.
+* Added if-modified-since feature so FileHandler would only send files if they were newer than the given date.
+* Refactored internal redirects and internal posting so Handlers could reuse other Handlers output in their own.
+* Refactored server to support multiple endpoints under one server.
+* Fixed an off by one bug in the ChunkedOutputStream class whenever sending files or data larger than 4096 bytes.
+* Fixed a null pointer exception from being thrown when users simply connect and don't send an actual request to the server.
+* Fixed upper case file extension caused mime-type lookup to fail.
+* Fixed a null url when Host header property wasn't specified.
+* Fixed a null pointer exception during socket creation.
+* Fixed a null pointer exception from being thrown when Handler classnames couldn't be found.
+* Refactored object creation to handle advanced configuration on Handlers/Endpoints.  This allows a seperate program to integrate more tightly with Pygmy.
+* Fix a bug that prevented Http 1.0 clients to receive chunked output streams.
+* Fix an infinite loop that prevented large posts from being sent up properly.
+
+Version 0.1
+-----------
+* Initial version  on pygmy released.

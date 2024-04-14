@@ -1,0 +1,20 @@
+<?xml version="1.0"?>
+<project
+    xmlns:j="jelly:core"
+    xmlns:u="jelly:util">
+
+<!--    <goal name="clean">-->
+<!--        <delete dir="${classesDir}" includes="**/*.class"/>-->
+<!--    </goal>-->
+<!---->
+<!---->
+<!--    <goal name="clean-build">-->
+<!--        <attainGoal name="clean"/>-->
+<!--        <mkdir dir="${maven.build.dir}"/>-->
+<!--    </goal>-->
+<!---->
+
+    <preGoal name="jar:jar">
+        <j:set var="maven.jar.manifest" value="pygmy.mf" />
+    </preGoal>
+</project>

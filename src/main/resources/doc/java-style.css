@@ -1,0 +1,73 @@
+div.code {
+    margin: 0px 0px 0px 20px;
+    padding: 5px 5px 5px 20px;
+    background-color: rgb( 243, 248, 215 );
+    border: 1px solid rgb( 222, 222, 184 );
+    white-space: pre;
+    font-family: monospace;
+    font-size: 12pt;
+    overflow: auto;
+}
+
+a:hover {
+    text-decoration: underline;
+}
+
+a {
+    text-decoration: none;
+    color: #224488;
+}
+
+div.title {
+    padding: 5px 15px 10px 15px;
+    background-color: #336699;
+    color: #FFFFFF;
+    border-left: 1px solid #000000;
+    border-right: 2px solid #000000;
+    border-top: 1px solid #000000;
+    font-family: Verdana, Arial, Helvetica, sans-serif;
+    font-size: 18px;
+}
+
+font.title {
+    font-family: Verdana, Arial, Helvetica, sans-serif;
+    font-size: 18;
+}
+
+div.text {
+    padding: 10px 15px 10px 15px;
+    background-color: #ffffff;
+    border-top: 1px solid #000000;
+    border-left: 1px solid #000000;
+    border-right: 2px solid #000000;
+    border-bottom: 2px solid #000000;
+}
+
+font.code {
+    font-family: monospace;
+    font-size: 15px;
+}
+
+font.navigation {
+    font-family: monospace;
+    font-size: 12px;
+}
+
+table.inner {
+    width: 100%;
+    border-width: 1px;
+    border-style: solid;
+    border-color: black;
+}
+
+tr.header {
+    background-color: #CCCCFF;
+}
+
+tr.row {
+    background-color: #EEEEEE;
+}
+
+tr.altrow {
+    background-color: #FFFFFF;
+}

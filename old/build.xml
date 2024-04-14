@@ -1,0 +1,152 @@
+<project name="pygmy" default="usage" basedir=".">
+
+    <property name="version" value="1.0"/>
+    <property name="srcDir" location="srcs"/>
+    <property name="classesDir" location="classes"/>
+    <property name="doc" location="doc" />
+    <path id="libs">
+        <fileset dir="${basedir}/lib">
+            <include name="**/*.jar"/>
+            <include name="**/*.zip"/>
+        </fileset>
+    </path>
+    <target name="usage">
+        <echo>see: ant -projectHelp</echo>
+    </target>
+
+    <target name="all" description="Builds and packages the project" depends="build,doc,package"/>
+    <target name="build" description="Cleanly builds the project" depends="clean,compile" />
+
+    <target name="clean" description="Cleans the classes directory.">
+        <delete includeemptydirs="true">
+            <fileset dir="${classesDir}" includes="**/*" />
+            <fileset dir="${basedir}/build" includes="*.jar"/>
+        </delete>
+    </target>
+
+    <target name="compile" description="Builds changed files of the project">
+        <mkdir dir="${basedir}/classes"/>
+        <javac srcdir="${srcDir}" destDir="${classesDir}" debug="on" deprecation="on">
+            <classpath refid="libs"/>
+        </javac>
+        <copy todir="${classesDir}">
+            <fileset dir="${srcDir}">
+                <include name="**/*.properties"/>
+                <include name="**/*.gif"/>
+            </fileset>
+        </copy>
+    </target>
+
+    <target name="package" description="Creates the jar files for the project.">
+        <mkdir dir="${basedir}/build"/>
+        <property name="buildDir" value="${basedir}/build"/>
+        <buildnumber file="${buildDir}/pygmy.build"/>
+        <tstamp/>
+
+        <manifest file="${buildDir}/pygmy.mf" mode="update">
+            <attribute name="Build-Number" value="${version}.${build.number} ${TODAY}"/>
+        </manifest>
+        <jar jarfile="${buildDir}/pygmy-core.jar" manifest="${buildDir}/pygmy.mf">
+            <fileset dir="${classesDir}">
+                <include name="pygmy/core/**/*.class"/>
+                <include name="pygmy/example/**/*.class"/>
+            </fileset>
+        </jar>
+
+        <manifest file="${buildDir}/handler.mf">
+            <attribute name="Build-Number" value="${version}.${build.number} ${TODAY}"/>
+        </manifest>
+        <jar jarfile="${buildDir}/pygmy-handlers.jar" manifest="${buildDir}/handler.mf">
+            <fileset dir="${classesDir}">
+                <include name="pygmy/handlers/**/*.class"/>
+                <include name="pygmy/config/**/*"/>
+                <include name="pygmy/web/**/*"/>
+            </fileset>
+        </jar>
+
+        <manifest file="${buildDir}/docs.mf">
+            <attribute name="Build-Number" value="${version}.${build.number} ${TODAY}"/>
+        </manifest>
+        <jar jarfile="${buildDir}/pygmy-docs.jar" manifest="${buildDir}/docs.mf">
+            <fileset dir="${basedir}" includes="doc/**/*"/>
+        </jar>
+    </target>
+
+    <target name="doc" description="Generates the javadoc for this project.">
+        <mkdir dir="${doc}" />
+        <javadoc sourcepath="${srcDir}" destdir="${doc}/api" packagenames="pygmy.*" verbose="yes" stylesheetfile="${basedir}/doc/java-style.css"/>
+    </target>
+
+    <target name="zip" description="archives the pygmy project into a zip file.">
+        <zip basedir="${basedir}" zipfile="${basedir}/../pygmy.zip" includes="**/*" excludes="**/*.class,classes/**/*" update="false"/>
+    </target>
+
+    <target name="distrib" description="Used to create a distribution of pygmy">
+        <zip basedir="${basedir}" zipfile="${basedir}/pygmy-httpd.zip">
+            <include name="srcs/**/*"/>
+            <include name="build/pygmy*.jar"/>
+            <include name="README.txt"/>
+            <include name="ChangeLog.txt"/>
+            <include name="config/*.properties"/>
+            <include name="build.xml"/>
+            <include name="mime-types.properties"/>
+        </zip>
+    </target>
+
+    <target name="jdepend-txt" depends="compile" description="creates a JDepend report in the doc directory" >
+        <!-- requires the following:
+             1) download JDepend from http://www.clarkware.com/software/JDepend.html
+             2) setup JDepend as described on that webpage
+                i.e. set JDEPEND_HOME
+                     add jar to classpath
+        -->
+        <jdepend outputfile="doc/jdepend-report.txt">
+            <sourcespath>
+                <pathelement location="classes" />
+            </sourcespath>
+            <classpath location="classes" />
+        </jdepend>
+    </target>
+
+    <target name="jdepend-gui" depends="compile" description="opens JDepend " >
+        <!-- requires the following:
+             1) download JDepend from http://www.clarkware.com/software/JDepend.html
+             2) setup JDepend as described on that webpage
+                i.e. set JDEPEND_HOME
+                     add jar to classpath
+        -->
+        <java classname="jdepend.swingui.JDepend" fork="true">
+            <arg path="classes" />
+        </java>
+    </target>
+
+    <target name="javancss" description="called by javancss-gui or javancss-txt" >
+        <!-- requires the following:
+             1) download JavaNCSS from http://www.kclee.com/clemens/java/javancss/
+             2) install JavaNCSS
+                i.e. set JAVANCSS_HOME
+                     add jars to classpath
+            notes: for now I'm avoiding using the JavaNCSS task because it just adds one more thing to install.
+        -->
+        <java classname="javancss.Main" fork="true" output="${file}" >
+            <arg value="-all" />
+            <arg value="${gui}" />
+            <arg value="-recursive" />
+            <arg value="srcs"/>
+        </java>
+    </target>
+
+    <target name="javancss-gui" description="launches the JavaNCSS gui">
+        <antcall target="javancss">
+            <param name="gui" value="-gui" />
+        </antcall>
+    </target>
+
+    <target name="javancss-txt" description="creates a JavaNCSS report for the web">
+        <antcall target="javancss">
+            <param name="gui" value="" />
+            <param name="file" value="doc/javancss.txt" />
+        </antcall>
+    </target>
+
+</project>
