@@ -4,15 +4,14 @@ import lombok.extern.slf4j.Slf4j;
 import pygmy.core.*;
 
 import java.io.*;
-import java.util.logging.Logger;
-import java.util.StringTokenizer;
-import java.util.TreeMap;
-import java.util.Iterator;
-import java.util.Comparator;
-import java.text.ParseException;
-import java.text.NumberFormat;
 import java.net.HttpURLConnection;
 import java.net.URI;
+import java.text.NumberFormat;
+import java.text.ParseException;
+import java.util.Comparator;
+import java.util.Iterator;
+import java.util.StringTokenizer;
+import java.util.TreeMap;
 
 /**
  * <p>
@@ -24,7 +23,6 @@ import java.net.URI;
  * a default file for directory requests (index.html as default), but you can override that by configuring it.  This
  * handler offers both file and directory listing that can be turned on or off.  By default it is turned off.
  * </p>
- *
  */
 @Slf4j
 public class FileHandler extends AbstractHandler implements Handler {
@@ -39,11 +37,11 @@ public class FileHandler extends AbstractHandler implements Handler {
     private String css;
 
     public FileHandler(String root) {
-        this( new File(root));
+        this(new File(root));
     }
 
     public FileHandler(File root) {
-        this( root, "index.html");
+        this(root, "index.html");
     }
 
     public FileHandler(File root, String defaultFile) {
@@ -51,12 +49,12 @@ public class FileHandler extends AbstractHandler implements Handler {
         this.defaultFile = defaultFile;
     }
 
-    public FileHandler allowDirectoryListing( boolean listing ) {
+    public FileHandler allowDirectoryListing(boolean listing) {
         allowDirectoryListing = listing;
         return this;
     }
 
-    public FileHandler css( String css ) {
+    public FileHandler css(String css) {
         this.css = css;
         return this;
     }
@@ -66,36 +64,36 @@ public class FileHandler extends AbstractHandler implements Handler {
         return true;
     }
 
-    protected boolean handleBody( HttpRequest request, HttpResponse response ) throws IOException {
-        File file = Http.translatePath( root, request.getUrlMatch().getTrailing() );
-        if( !Http.isSecure( root, file ) ) {
-            log.warn( "Access denied to " + file.getAbsolutePath() );
+    protected boolean handleBody(HttpRequest request, HttpResponse response) throws IOException {
+        File file = Http.translatePath(root, request.getUrlMatch().getTrailing());
+        if (!Http.isSecure(root, file)) {
+            log.warn("Access denied to " + file.getAbsolutePath());
             return false;
         }
-        request.putProperty( "file-path", file.getAbsolutePath() );
-        if ( file.isDirectory() ) {
-            if( allowDirectoryListing ) {
-                return directoryListing( file, request, response );
+        request.putProperty("file-path", file.getAbsolutePath());
+        if (file.isDirectory()) {
+            if (allowDirectoryListing) {
+                return directoryListing(file, request, response);
             } else {
-                file = new File( file, defaultFile );
+                file = new File(file, defaultFile);
             }
         }
 
-        if (file.exists() == false) {
-            log.warn( "File " + file.getAbsolutePath() + " was not found." );
+        if (!file.exists()) {
+            log.warn("File " + file.getAbsolutePath() + " was not found.");
             return false;
         }
-        String type = getMimeType( file.getName() );
-        if( type != null ) {
-            sendFile( request, response, file, type );
+        String type = getMimeType(file.getName());
+        if (type != null) {
+            sendFile(request, response, file, type);
             return true;
         } else {
-            log.warn( "Mime type for file " + file.getAbsolutePath() + " was not found." );
+            log.warn("Mime type for file " + file.getAbsolutePath() + " was not found.");
             return false;
         }
     }
 
-    static public void sendFile( HttpRequest request, HttpResponse response, File file, String type ) throws IOException {
+    static public void sendFile(HttpRequest request, HttpResponse response, File file, String type) throws IOException {
         if (!file.isFile()) {
             response.sendError(HttpURLConnection.HTTP_NOT_FOUND, " not a normal file");
             return;
@@ -105,64 +103,64 @@ public class FileHandler extends AbstractHandler implements Handler {
             return;
         }
 
-        if( request.getRequestHeader(IF_MODIFIED) != null ) {
+        if (request.getRequestHeader(IF_MODIFIED) != null) {
             try {
-                long modified = Http.parseTime( request.getRequestHeader(IF_MODIFIED) );
-                if( file.lastModified() <= modified ) {
-                    response.setStatusCode( HttpURLConnection.HTTP_NOT_MODIFIED );
+                long modified = Http.parseTime(request.getRequestHeader(IF_MODIFIED));
+                if (file.lastModified() <= modified) {
+                    response.setStatusCode(HttpURLConnection.HTTP_NOT_MODIFIED);
                     return;
                 }
-            } catch( ParseException ignore ) {
+            } catch (ParseException ignore) {
                 // ignore the date.
             }
         }
-        InputStream in = new BufferedInputStream( new FileInputStream(file) );
-        response.addHeader(LAST_MODIFIED_KEY, Http.formatTime(file.lastModified()) );
-        long[] range = getRange( request, file );
-        response.setMimeType( type );
-        response.sendResponse( in, range[0], range[1] );
+        InputStream in = new BufferedInputStream(new FileInputStream(file));
+        response.addHeader(LAST_MODIFIED_KEY, Http.formatTime(file.lastModified()));
+        long[] range = getRange(request, file);
+        response.setMimeType(type);
+        response.sendResponse(in, range[0], range[1]);
     }
 
-    private static long[] getRange( HttpRequest request, File file ) {
-        long range[] = new long[2];
+    private static long[] getRange(HttpRequest request, File file) {
+        long[] range = new long[2];
         range[0] = 0;
         range[1] = file.length();
-        String rangeStr = request.getRequestHeader( RANGE_HEADER_KEY, "bytes=0-" );
+        String rangeStr = request.getRequestHeader(RANGE_HEADER_KEY, "bytes=0-");
         int equalSplit = rangeStr.indexOf("=") + 1;
         int split = rangeStr.indexOf("-");
-        if( split < -1 ) {
+        if (split < -1) {
             try {
-                range[0] = Integer.parseInt( rangeStr.substring( equalSplit ) );
-            } catch( NumberFormatException e ) {
+                range[0] = Integer.parseInt(rangeStr.substring(equalSplit));
+            } catch (NumberFormatException e) {
             }
         } else {
-            range[0] = Integer.parseInt( rangeStr.substring( equalSplit, split ) );
-            if( split + 1 < rangeStr.length() ) {
+            range[0] = Integer.parseInt(rangeStr.substring(equalSplit, split));
+            if (split + 1 < rangeStr.length()) {
                 try {
-                    range[1] = Integer.parseInt( rangeStr.substring( split + 1, rangeStr.length() ) );
-                } catch( NumberFormatException e ) {
+                    range[1] = Integer.parseInt(rangeStr.substring(split + 1, rangeStr.length()));
+                } catch (NumberFormatException e) {
                 }
             }
         }
         return range;
     }
 
-    private boolean directoryListing( File directory, HttpRequest request, HttpResponse response ) throws IOException {
+    private boolean directoryListing(File directory, HttpRequest request, HttpResponse response) throws IOException {
         StringBuffer templateHeader = new StringBuffer();
 
-        String decodedUrl = java.net.URLDecoder.decode( request.getUrl(), "UTF-8" );
-        addFolderNavigation( templateHeader, decodedUrl );
-        addTableHeaders( templateHeader );
-        addFilesAndFolders( request, directory.listFiles(), templateHeader);
-        addTableFooter( templateHeader );
+        String decodedUrl = java.net.URLDecoder.decode(request.getUrl(), "UTF-8");
+        addFolderNavigation(templateHeader, decodedUrl);
+        addTableHeaders(templateHeader);
+        addFilesAndFolders(request, directory.listFiles(), templateHeader);
+        addTableFooter(templateHeader);
 
-        response.setMimeType( "text/html" );
+        response.setMimeType("text/html");
         PrintWriter out = response.getPrintWriter();
-        out.write( addHtmlHeader( request ) );
+        out.write(addHtmlHeader(request));
         out.write("<body>\n");
-        out.write( templateHeader.toString() );
-        out.write( "</body>\n" );
-        out.write( "</html>" );
+        out.write(templateHeader.toString());
+        out.write("</body>\n");
+        out.write("</html>");
         return true;
     }
 
@@ -171,19 +169,19 @@ public class FileHandler extends AbstractHandler implements Handler {
         templateHeader.append("</div>\n");
     }
 
-    private String addHtmlHeader( HttpRequest request ) throws IOException {
+    private String addHtmlHeader(HttpRequest request) throws IOException {
         StringBuffer templateHeader = new StringBuffer();
-        templateHeader.append( "<html>\n");
-        templateHeader.append( "<head>\n");
-        if(  css != null ) {
-            templateHeader.append( "<link rel=\"stylesheet\" type=\"text/css\" href=\"" );
-            templateHeader.append( request.createUrl( css ) );
-            templateHeader.append( "\">\n");
+        templateHeader.append("<html>\n");
+        templateHeader.append("<head>\n");
+        if (css != null) {
+            templateHeader.append("<link rel=\"stylesheet\" type=\"text/css\" href=\"");
+            templateHeader.append(request.createUrl(css));
+            templateHeader.append("\">\n");
         } else {
             addStyleDefintion(templateHeader);
 
         }
-        templateHeader.append( "</head>\n");
+        templateHeader.append("</head>\n");
         return templateHeader.toString();
     }
 
@@ -215,29 +213,29 @@ public class FileHandler extends AbstractHandler implements Handler {
         templateHeader.append("</style>");
     }
 
-    private void addFolderNavigation( StringBuffer templateHeader, String decodedUrl ) {
-        templateHeader.append( "<div class=\"navigationbar\">\n");
-        templateHeader.append( "<span class=\"topHeader\">\n");
-        StringTokenizer token = new StringTokenizer( decodedUrl, "/" );
-        StringBuffer buf = new StringBuffer( decodedUrl.length() );
+    private void addFolderNavigation(StringBuffer templateHeader, String decodedUrl) {
+        templateHeader.append("<div class=\"navigationbar\">\n");
+        templateHeader.append("<span class=\"topHeader\">\n");
+        StringTokenizer token = new StringTokenizer(decodedUrl, "/");
+        StringBuffer buf = new StringBuffer(decodedUrl.length());
         templateHeader.append("&nbsp;<a href=\"/\" class=\"whitelink\">[home]</a>\n");
-        while( token.hasMoreElements() ) {
+        while (token.hasMoreElements()) {
             String path = token.nextToken();
-            buf.append( "/" );
-            buf.append( path );
-            templateHeader.append( "/" );
-            templateHeader.append( "<a href=\"" );
-            templateHeader.append( buf.toString() );
-            templateHeader.append( "\" class=\"whitelink\">");
-            templateHeader.append( path );
-            templateHeader.append( "</a>" );
+            buf.append("/");
+            buf.append(path);
+            templateHeader.append("/");
+            templateHeader.append("<a href=\"");
+            templateHeader.append(buf.toString());
+            templateHeader.append("\" class=\"whitelink\">");
+            templateHeader.append(path);
+            templateHeader.append("</a>");
         }
-        templateHeader.append( "</span>\n</div>\n");
+        templateHeader.append("</span>\n</div>\n");
     }
 
     private void addTableHeaders(StringBuffer templateHeader) {
         templateHeader.append("<div class=\"box\">\n");
-        templateHeader.append("<table width=\"100%\" cellspacing=\"0\" cellpadding=\"2\">\n" );
+        templateHeader.append("<table width=\"100%\" cellspacing=\"0\" cellpadding=\"2\">\n");
         templateHeader.append("<tr class=\"tableheader\">\n");
         templateHeader.append("<th>Name</td>");
         templateHeader.append("<th>Type</td>");
@@ -245,74 +243,74 @@ public class FileHandler extends AbstractHandler implements Handler {
         templateHeader.append("\n</tr>\n");
     }
 
-    private void addFilesAndFolders( HttpRequest request, File[] files, StringBuffer templateHeader ) throws IOException {
+    private void addFilesAndFolders(HttpRequest request, File[] files, StringBuffer templateHeader) throws IOException {
         URI rootUri = this.root.toURI();
         ComparableComparator comp = new ComparableComparator();
-        TreeMap dirMap = new TreeMap( comp );
-        TreeMap fileMap = new TreeMap( comp );
+        TreeMap dirMap = new TreeMap(comp);
+        TreeMap fileMap = new TreeMap(comp);
         StringBuffer fileBuffer = new StringBuffer();
-        for( int i = 0; i < files.length; i++ ) {
-            fileBuffer.delete( 0, fileBuffer.length() );
-            if( files[i].isDirectory() ) {
+        for (int i = 0; i < files.length; i++) {
+            fileBuffer.delete(0, fileBuffer.length());
+            if (files[i].isDirectory()) {
                 String name = files[i].getName();
-                fileBuffer.append( "<td class=\"nameColumn\"><span class=\"directory\">" );
-                fileBuffer.append( "<a href=\"");
-                fileBuffer.append( getHttpHyperlink( request, rootUri, files[i]) );
-                fileBuffer.append( "\">&nbsp;" );
-                fileBuffer.append( name );
-                fileBuffer.append( "</a></span></td>\n" );
-                fileBuffer.append( "<td class=\"typeColumn\">Folder</td>\n" );
-                fileBuffer.append( "<td class=\"sizeColumn\"></td>\n" );
-                fileBuffer.append( "</tr>\n");
-                dirMap.put( name, fileBuffer.toString() );
+                fileBuffer.append("<td class=\"nameColumn\"><span class=\"directory\">");
+                fileBuffer.append("<a href=\"");
+                fileBuffer.append(getHttpHyperlink(request, rootUri, files[i]));
+                fileBuffer.append("\">&nbsp;");
+                fileBuffer.append(name);
+                fileBuffer.append("</a></span></td>\n");
+                fileBuffer.append("<td class=\"typeColumn\">Folder</td>\n");
+                fileBuffer.append("<td class=\"sizeColumn\"></td>\n");
+                fileBuffer.append("</tr>\n");
+                dirMap.put(name, fileBuffer.toString());
             } else {
                 String absolutePath = files[i].getAbsolutePath();
-                String mimeType = getMimeType( absolutePath );
-                if( mimeType != null ) {
+                String mimeType = getMimeType(absolutePath);
+                if (mimeType != null) {
                     String name = files[i].getName();
-                    fileBuffer.append( "<td class=\"nameColumn\"><span class=\"file\"><a href=\"");
-                    fileBuffer.append( getHttpHyperlink( request, rootUri, files[i] ) );
-                    fileBuffer.append( "\">" );
-                    fileBuffer.append( name );
-                    fileBuffer.append( "</a></span></td>\n" );
-                    fileBuffer.append( "<td class=\"typeColumn\">");
-                    fileBuffer.append( mimeType );
-                    fileBuffer.append( "</td>\n" );
-                    fileBuffer.append( "<td class=\"sizeColumn\">" );
-                    fileBuffer.append( NumberFormat.getIntegerInstance().format( files[i].length() ) );
-                    fileBuffer.append( "</td>\n");
-                    fileMap.put( name, fileBuffer.toString() );
+                    fileBuffer.append("<td class=\"nameColumn\"><span class=\"file\"><a href=\"");
+                    fileBuffer.append(getHttpHyperlink(request, rootUri, files[i]));
+                    fileBuffer.append("\">");
+                    fileBuffer.append(name);
+                    fileBuffer.append("</a></span></td>\n");
+                    fileBuffer.append("<td class=\"typeColumn\">");
+                    fileBuffer.append(mimeType);
+                    fileBuffer.append("</td>\n");
+                    fileBuffer.append("<td class=\"sizeColumn\">");
+                    fileBuffer.append(NumberFormat.getIntegerInstance().format(files[i].length()));
+                    fileBuffer.append("</td>\n");
+                    fileMap.put(name, fileBuffer.toString());
                 }
             }
         }
         int count = 0;
-        count = writeOutMap(templateHeader, dirMap, count );
-        count = writeOutMap(templateHeader, fileMap, count );
+        count = writeOutMap(templateHeader, dirMap, count);
+        count = writeOutMap(templateHeader, fileMap, count);
     }
 
     private int writeOutMap(StringBuffer templateHeader, TreeMap dirMap, int count) {
-        String[] styles = { "fileentry", "altfileentry" };
-        for( Iterator i = dirMap.keySet().iterator(); i.hasNext(); ) {
-            templateHeader.append( "<tr class=\"");
-            templateHeader.append( styles[ count % 2] );
-            templateHeader.append( "\">\n");
-            templateHeader.append( (String)dirMap.get( i.next() ) );
-            templateHeader.append( "</tr>\n");
+        String[] styles = {"fileentry", "altfileentry"};
+        for (Iterator i = dirMap.keySet().iterator(); i.hasNext(); ) {
+            templateHeader.append("<tr class=\"");
+            templateHeader.append(styles[count % 2]);
+            templateHeader.append("\">\n");
+            templateHeader.append((String) dirMap.get(i.next()));
+            templateHeader.append("</tr>\n");
             count++;
         }
 
         return count;
     }
 
-    private String getHttpHyperlink( HttpRequest request, URI directory, File file ) throws IOException {
-        String prefixRelative = directory.relativize( file.toURI() ).getPath();
-        String urlPrefix = request.getUrl().substring( 0, request.getUrl().indexOf( request.getUrlMatch().getTrailing() ) );
-        if( urlPrefix.endsWith("/") ) {
+    private String getHttpHyperlink(HttpRequest request, URI directory, File file) throws IOException {
+        String prefixRelative = directory.relativize(file.toURI()).getPath();
+        String urlPrefix = request.getUrl().substring(0, request.getUrl().indexOf(request.getUrlMatch().getTrailing()));
+        if (urlPrefix.endsWith("/")) {
             return urlPrefix + prefixRelative;
-        } else if( prefixRelative.startsWith("/") ) {
+        } else if (prefixRelative.startsWith("/")) {
             return urlPrefix + prefixRelative;
         } else {
-            return request.createUrl( urlPrefix + "/" + prefixRelative );
+            return request.createUrl(urlPrefix + "/" + prefixRelative);
         }
     }
 
@@ -321,10 +319,10 @@ public class FileHandler extends AbstractHandler implements Handler {
      */
     public static class ComparableComparator implements Comparator {
         public int compare(Object o1, Object o2) {
-            Comparable c1 = (Comparable)o1;
-            Comparable c2 = (Comparable)o2;
+            Comparable c1 = (Comparable) o1;
+            Comparable c2 = (Comparable) o2;
 
-            return c1.compareTo( c2 );
+            return c1.compareTo(c2);
         }
     }
 

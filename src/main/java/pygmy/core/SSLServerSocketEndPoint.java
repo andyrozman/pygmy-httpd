@@ -1,26 +1,25 @@
 package pygmy.core;
 
+import lombok.extern.slf4j.Slf4j;
+
 import javax.net.ssl.*;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.Socket;
 import java.net.ServerSocket;
+import java.net.Socket;
 import java.security.GeneralSecurityException;
 import java.security.KeyStore;
 import java.security.Principal;
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
-import java.util.logging.Logger;
-import java.util.logging.Level;
+
 /**
  * This EndPoint provides SSL sockets for http protocol.  This extends the ServerSocket to create SSLSockets for https.
- *
  */
+@Slf4j
 public class SSLServerSocketEndPoint extends ServerSocketEndPoint {
-
-    private static final Logger log = Logger.getLogger( ServerSocketEndPoint.class.getName() );
 
     private KeyStore keystore;
     private String storepass;
@@ -31,21 +30,21 @@ public class SSLServerSocketEndPoint extends ServerSocketEndPoint {
     private boolean clientAuth = false;
 
     public SSLServerSocketEndPoint(File keystoreFile, String alias, String storepass) throws GeneralSecurityException, IOException {
-        super( 143 );
+        super(143);
         this.alias = alias;
         this.storepass = storepass;
-        this.keystore = loadKeystoreFromFile( keystoreFile, storepass.toCharArray() );
+        this.keystore = loadKeystoreFromFile(keystoreFile, storepass.toCharArray());
     }
 
     public SSLServerSocketEndPoint(KeyStore keystore, String alias, String storepass) {
-        super( 143 );
+        super(143);
         this.keystore = keystore;
         this.alias = alias;
         this.storepass = storepass;
     }
 
     public SSLServerSocketEndPoint(KeyStore keystore, String alias, String storepass, String keypass) {
-        super( 143 );
+        super(143);
         this.keystore = keystore;
         this.alias = alias;
         this.storepass = storepass;
@@ -57,10 +56,10 @@ public class SSLServerSocketEndPoint extends ServerSocketEndPoint {
         try {
             keypass = keypass == null ? storepass : keypass;
             SSLContext context = SSLContext.getInstance("SSL");
-            context.init(getKeyManagers(keystore, keypass.toCharArray(), alias ), getTrustManagers(keystore), null);
+            context.init(getKeyManagers(keystore, keypass.toCharArray(), alias), getTrustManagers(keystore), null);
             factory = context.getServerSocketFactory();
         } catch (GeneralSecurityException e) {
-            log.error( "Security Exception while initializing.", e );
+            log.error("Security Exception while initializing.", e);
             throw (IOException) new IOException().initCause(e);
         }
 
@@ -72,15 +71,15 @@ public class SSLServerSocketEndPoint extends ServerSocketEndPoint {
 
     protected ServerSocket createSocket(int port) throws IOException {
         ServerSocket serverSocket = super.createSocket(port);
-        if( cipherSuites != null ) {
-            ((SSLServerSocket)serverSocket).setEnabledCipherSuites( cipherSuites );
+        if (cipherSuites != null) {
+            ((SSLServerSocket) serverSocket).setEnabledCipherSuites(cipherSuites);
         }
 
-        if( protocols != null ) {
-            ((SSLServerSocket)serverSocket).setEnabledProtocols( protocols );
+        if (protocols != null) {
+            ((SSLServerSocket) serverSocket).setEnabledProtocols(protocols);
         }
 
-        ((SSLServerSocket)serverSocket).setNeedClientAuth( clientAuth );
+        ((SSLServerSocket) serverSocket).setNeedClientAuth(clientAuth);
         return serverSocket;
     }
 
@@ -116,17 +115,17 @@ public class SSLServerSocketEndPoint extends ServerSocketEndPoint {
         return kms;
     }
 
-    public SSLServerSocketEndPoint protocols( String[] protocols ) {
+    public SSLServerSocketEndPoint protocols(String[] protocols) {
         this.protocols = protocols;
         return this;
     }
 
-    public SSLServerSocketEndPoint cipherSuites( String[] suites ) {
+    public SSLServerSocketEndPoint cipherSuites(String[] suites) {
         cipherSuites = suites;
         return this;
     }
 
-    public SSLServerSocketEndPoint clientAuth( boolean auth ) {
+    public SSLServerSocketEndPoint clientAuth(boolean auth) {
         clientAuth = auth;
         return this;
     }
@@ -141,7 +140,7 @@ public class SSLServerSocketEndPoint extends ServerSocketEndPoint {
         }
 
         public String chooseClientAlias(String[] keyType, Principal[] issuers, Socket socket) {
-            return baseKM.chooseClientAlias( keyType, issuers, socket );
+            return baseKM.chooseClientAlias(keyType, issuers, socket);
         }
 
         public String chooseServerAlias(String keyType, Principal[] issuers, Socket socket) {
@@ -151,7 +150,7 @@ public class SSLServerSocketEndPoint extends ServerSocketEndPoint {
                     if (validAliases[j].equals(alias)) return alias;
                 }
             }
-            return baseKM.chooseServerAlias( keyType, issuers, socket );  // use default if we can't find the alias.
+            return baseKM.chooseServerAlias(keyType, issuers, socket);  // use default if we can't find the alias.
         }
 
         public X509Certificate[] getCertificateChain(String alias) {

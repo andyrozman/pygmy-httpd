@@ -4,10 +4,9 @@ import lombok.extern.slf4j.Slf4j;
 import pygmy.core.*;
 
 import java.io.IOException;
-import java.util.List;
 import java.util.ArrayList;
 import java.util.Iterator;
-import java.util.logging.Logger;
+import java.util.List;
 
 /**
  * This is the default implementation of a chain of handlers.  The .chain parameter defines the names of the
@@ -25,7 +24,6 @@ import java.util.logging.Logger;
  */
 @Slf4j
 public class DefaultChainHandler extends AbstractHandler implements Handler {
-    //private static final Logger log = Logger.getLogger( DefaultChainHandler.class.getName() );
 
     private List chain = new ArrayList();
 
@@ -35,19 +33,19 @@ public class DefaultChainHandler extends AbstractHandler implements Handler {
 
     public boolean start(Server server) {
         boolean success = super.start(server);
-        for( int i = 0; i < chain.size(); i++ ) {
-            success = success && ((Handler)chain.get(i)).start( server );
+        for (int i = 0; i < chain.size(); i++) {
+            success = success && ((Handler) chain.get(i)).start(server);
         }
         return success;
     }
 
     public boolean handle(Request request, Response response) throws IOException {
         boolean hasBeenHandled = false;
-        for( int i = 0; i < chain.size() && !hasBeenHandled; i++ ) {
+        for (int i = 0; i < chain.size() && !hasBeenHandled; i++) {
             Handler handler = (Handler) chain.get(i);
-            hasBeenHandled = handler.handle(request, response );
-            if( hasBeenHandled ) {
-                log.info( "Handled by " + i );
+            hasBeenHandled = handler.handle(request, response);
+            if (hasBeenHandled) {
+                log.debug("Handled by " + i);
             }
         }
         return hasBeenHandled;
@@ -55,10 +53,10 @@ public class DefaultChainHandler extends AbstractHandler implements Handler {
 
     public boolean shutdown(Server server) {
         boolean success = true;
-        if( chain != null ) {
-            for( Iterator i = chain.iterator(); i.hasNext(); ) {
-                Handler current = (Handler)i.next();
-                success = success && current.shutdown( server );
+        if (chain != null) {
+            for (Iterator i = chain.iterator(); i.hasNext(); ) {
+                Handler current = (Handler) i.next();
+                success = success && current.shutdown(server);
             }
         }
 

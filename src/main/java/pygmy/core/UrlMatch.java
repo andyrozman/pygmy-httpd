@@ -1,8 +1,8 @@
 package pygmy.core;
 
-import java.util.Map;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.Map;
 
 /**
  * This object represents an instance of a url that matched an instance of {@link pygmy.core.UrlRule}.
@@ -11,7 +11,7 @@ import java.util.Iterator;
  */
 public class UrlMatch {
     private UrlRule rule;
-    private Map<String,String> values = new HashMap<String,String>();
+    private Map<String, String> values = new HashMap<String, String>();
     private String trailing;
 
     /**
@@ -21,7 +21,7 @@ public class UrlMatch {
      */
     public UrlMatch(UrlRule rule) {
         this.rule = rule;
-        values.putAll( this.rule.getDefaults() );
+        values.putAll(this.rule.getDefaults());
     }
 
     /**
@@ -35,20 +35,22 @@ public class UrlMatch {
 
     /**
      * Returns the variables value given it's name.
+     *
      * @param variable the variable's name
      * @return the value of the variable, or it's default value if one was provided in the {@link UrlRule}.
      */
     public String get(String variable) {
-        return values.get( variable );
+        return values.get(variable);
     }
 
     /**
      * Binds a value to a given variable.
+     *
      * @param variable the name of the variable
-     * @param value it's value.
+     * @param value    it's value.
      */
     public void put(String variable, String value) {
-        values.put( variable, value );
+        values.put(variable, value);
     }
 
     /**
@@ -56,7 +58,7 @@ public class UrlMatch {
      *
      * @return the Map of variable name to values.
      */
-    public Map<String,String> getValues() {
+    public Map<String, String> getValues() {
         return values;
     }
 
@@ -73,13 +75,15 @@ public class UrlMatch {
      * Returns any trailing portion of the url that was not apart of the UrlRule.  For example,
      * say the UrlRule was "/".  And it was matched against the url "/foobar/baz".  This would
      * return foobar/baz.  This makes it easier to write rules for matching heirarchial urls.
+     *
      * @return the trailing portion not directly matched by this UrlRule.
      */
     public String getTrailing() {
         return trailing;
     }
 
-    public void setTrailing( String trailing ) {
+    public void setTrailing(String trailing) {
         this.trailing = trailing;
     }
+    
 }

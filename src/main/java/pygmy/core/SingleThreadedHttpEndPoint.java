@@ -9,9 +9,6 @@ import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.*;
 import java.util.Iterator;
-import java.util.logging.Level;
-import java.util.logging.LogRecord;
-import java.util.logging.Logger;
 
 @Slf4j
 public class SingleThreadedHttpEndPoint implements EndPoint, Runnable {
@@ -56,7 +53,7 @@ public class SingleThreadedHttpEndPoint implements EndPoint, Runnable {
                 keepProcessing = processIncomingConnections(selector);
             }
         } catch (IOException e) {
-            logException(Level.SEVERE, e);
+            log.error("run(). IOException: {}", e.getMessage());
         } finally {
             if (selector != null) {
                 try {
@@ -87,7 +84,7 @@ public class SingleThreadedHttpEndPoint implements EndPoint, Runnable {
                 }
             }
         } catch (Exception e) {
-            logException(Level.SEVERE, e);
+            log.error("Exception on processing incoming connections: {}", e.getMessage());
         }
         return true;
     }
@@ -215,7 +212,7 @@ public class SingleThreadedHttpEndPoint implements EndPoint, Runnable {
         public void transfer(ByteBuffer data) throws IOException {
             int count = client.in.sink().write(data);
             if (count == 0 || data.hasRemaining()) {
-                log.hashCode()System.out.println("Count: " + count + " remaing: " + data.hasRemaining());
+                log.debug("Count: " + count + " remaning: " + data.hasRemaining());
             }
         }
 
@@ -237,7 +234,7 @@ public class SingleThreadedHttpEndPoint implements EndPoint, Runnable {
         public void transfer(ByteBuffer data) throws IOException {
             int written = client.channel.write(data);
             if (written == 0) {
-                System.out.println("Written to socket: " + written);
+                log.debug("Written to socket: " + written);
             }
         }
 

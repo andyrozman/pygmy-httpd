@@ -1,13 +1,15 @@
 package pygmy.handlers;
 
-import pygmy.core.*;
+import lombok.extern.slf4j.Slf4j;
+import pygmy.core.AbstractHandler;
+import pygmy.core.HttpRequest;
+import pygmy.core.HttpResponse;
+import pygmy.core.Server;
 
 import java.io.IOException;
 import java.net.HttpURLConnection;
-import java.util.regex.Pattern;
 import java.util.regex.Matcher;
-import java.util.logging.Logger;
-import java.util.logging.Level;
+import java.util.regex.Pattern;
 
 /**
  * <p>
@@ -47,11 +49,9 @@ import java.util.logging.Level;
  * infinite loop when processing.  Something to look out for when using external redirects.
  * Most clients fail if they are redirected too many times.
  * </p>
- *
  */
+@Slf4j
 public class RedirectHandler extends AbstractHandler {
-
-    private static final Logger log = Logger.getLogger( RedirectHandler.class.getName() );
 
     Pattern rule;
     String substitution;
@@ -59,24 +59,24 @@ public class RedirectHandler extends AbstractHandler {
     int redirectHttpCode = HttpURLConnection.HTTP_MOVED_TEMP;
 
     public RedirectHandler(String rule, String substitution) {
-        this( rule, substitution, false);
+        this(rule, substitution, false);
     }
 
     public RedirectHandler(String rule, String substitution, boolean internalRedirect) {
-        this.rule = Pattern.compile( rule, Pattern.CASE_INSENSITIVE );
+        this.rule = Pattern.compile(rule, Pattern.CASE_INSENSITIVE);
         this.substitution = substitution;
         isInternalRedirect = internalRedirect;
     }
 
-    public RedirectHandler redirectHttpCode( int code ) {
+    public RedirectHandler redirectHttpCode(int code) {
         redirectHttpCode = code;
         return this;
     }
 
     public boolean start(Server server) {
         super.start(server);
-        if( log.isLoggable( Level.FINE ) ) {
-            log.fine( "Rule=" + rule.pattern() + ",subst=" + substitution + ",useInternal=" + isInternalRedirect + ",redirectCode=" + redirectHttpCode);
+        if (log.isDebugEnabled()) {
+            log.debug("Rule=" + rule.pattern() + ",subst=" + substitution + ",useInternal=" + isInternalRedirect + ",redirectCode=" + redirectHttpCode);
         }
         return true;
     }
@@ -86,18 +86,18 @@ public class RedirectHandler extends AbstractHandler {
     }
 
     protected boolean handleBody(HttpRequest request, HttpResponse response) throws IOException {
-        Matcher urlMatch = rule.matcher( request.getUrl() );
-        StringBuilder buffer = new StringBuilder( substitution );
-        if(urlMatch.find()) {
+        Matcher urlMatch = rule.matcher(request.getUrl());
+        StringBuilder buffer = new StringBuilder(substitution);
+        if (urlMatch.find()) {
             int lastIndex = 0;
             do {
                 lastIndex = replaceGroupInSubst(buffer, urlMatch);
-            } while( lastIndex < buffer.length() );
+            } while (lastIndex < buffer.length());
 
-            if( isInternalRedirect ) {
-                return server.post( new HttpRequest( buffer.toString(), server.getConfig(), true), response );
+            if (isInternalRedirect) {
+                return server.post(new HttpRequest(buffer.toString(), server.getConfig(), true), response);
             } else {
-                response.setStatusCode( redirectHttpCode );
+                response.setStatusCode(redirectHttpCode);
                 response.addHeader("Location", buffer.toString());
                 return true;
             }
@@ -108,18 +108,18 @@ public class RedirectHandler extends AbstractHandler {
 
     private int replaceGroupInSubst(StringBuilder buffer, Matcher urlMatch) {
         int index = buffer.indexOf("${");
-        if( index >= 0 ) {
+        if (index >= 0) {
             int endIndex = substitution.indexOf("}");
-            String reference = substitution.substring( index + 2, endIndex );
+            String reference = substitution.substring(index + 2, endIndex);
             String subst = null;
-            if( Character.isDigit( reference.charAt(0) ) ) {
-                int group = Integer.parseInt( reference );
-                subst = urlMatch.group( group );
+            if (Character.isDigit(reference.charAt(0))) {
+                int group = Integer.parseInt(reference);
+                subst = urlMatch.group(group);
             } else {
-                subst = server.getProperty( subst );
+                subst = server.getProperty(subst);
             }
-            if( subst != null ) {
-                buffer.replace( index, endIndex+1, subst );
+            if (subst != null) {
+                buffer.replace(index, endIndex + 1, subst);
             }
             return endIndex + 1;
         } else {

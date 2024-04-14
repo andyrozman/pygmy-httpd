@@ -1,11 +1,10 @@
 package pygmy.handlers;
 
+import lombok.extern.slf4j.Slf4j;
 import pygmy.core.*;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.logging.Logger;
-import java.util.logging.Level;
 
 /**
  * <p>
@@ -18,16 +17,15 @@ import java.util.logging.Level;
  * from the jar file by placing the same file on the file system, but load the default from the jar file if the file
  * not on the file system.
  * </p>
- *
  */
+@Slf4j
 public class ResourceHandler extends AbstractHandler implements Handler {
-    private static final Logger log = Logger.getLogger( ResourceHandler.class.getName() );
 
     private String resourceMount;
     private String defaultResource;
 
     public ResourceHandler(String resourceMount) {
-        this( resourceMount, "index.html");
+        this(resourceMount, "index.html");
     }
 
     public ResourceHandler(String resourceMount, String defaultResource) {
@@ -36,25 +34,25 @@ public class ResourceHandler extends AbstractHandler implements Handler {
     }
 
     protected boolean handleBody(HttpRequest request, HttpResponse response) throws IOException {
-        String resource = Http.join( resourceMount, request.getUrlMatch().getTrailing() );
-        if( resource.endsWith("/") ) {
+        String resource = Http.join(resourceMount, request.getUrlMatch().getTrailing());
+        if (resource.endsWith("/")) {
             resource += defaultResource;
-        } else if( resource.lastIndexOf('.') < 0 ) {
+        } else if (resource.lastIndexOf('.') < 0) {
             resource += "/" + defaultResource;
         }
-        if( log.isLoggable( Level.INFO ) ) {
-            log.info( "Loading resource: " + resource );
+        if (log.isInfoEnabled()) {
+            log.info("Loading resource: " + resource);
         }
-        String mimeType = getMimeType( resource );
-        InputStream is = getClass().getResourceAsStream( resource );
+        String mimeType = getMimeType(resource);
+        InputStream is = getClass().getResourceAsStream(resource);
 
-        if( mimeType == null || is == null ) {
-            log.warn( "Resource was not found or the mime type was not understood. (Found file=" + (is != null) + ") (Found mime-type=" + ( mimeType != null ) + ")" );
-            if( is != null ) is.close();
+        if (mimeType == null || is == null) {
+            log.warn("Resource was not found or the mime type was not understood. (Found file=" + (is != null) + ") (Found mime-type=" + (mimeType != null) + ")");
+            if (is != null) is.close();
             return false;
         }
-        response.setMimeType( mimeType );
-        response.sendResponse( is, -1 );
+        response.setMimeType(mimeType);
+        response.sendResponse(is, -1);
         return true;
     }
 
