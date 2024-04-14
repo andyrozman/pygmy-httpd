@@ -1,5 +1,5 @@
 ![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/andyrozman/pygmy-httpd/maven.yml)
-[![Release](https://jitpack.io/v/com.atech-software/atech-tools.svg)](https://jitpack.io/#com.atech-software/pygmy-httpd)
+[![Release](https://jitpack.io/v/com.atech-software/atech-tools.svg)](https://jitpack.io/#com.atech-software/pygmy-core/0.3.0)
 
 
 # pygmy-httpd
