@@ -22,7 +22,7 @@ public class ThreadPool {
     }
 
     public void execute(Runnable runnable) {
-        log.debug("Queueing runnable in thread pool.");
+        log.trace("Queueing runnable in thread pool.");
         synchronized (queue) {
             queue.add(runnable);
             queue.notify();
@@ -48,8 +48,8 @@ public class ThreadPool {
                     waitForTask();
                     Runnable runnable = retrieveTask();
                     if (runnable != null) {
-                        if (log.isDebugEnabled()) {
-                            log.debug("Starting runnable on thread " + Thread.currentThread().getName());
+                        if (log.isTraceEnabled()) {
+                            log.trace("Starting runnable on thread " + Thread.currentThread().getName());
                         }
                         try {
                             runnable.run();
@@ -58,11 +58,11 @@ public class ThreadPool {
                         }
                     }
                     if (log.isDebugEnabled()) {
-                        log.debug("Returning to thread pool " + Thread.currentThread().getName());
+                        log.trace("Returning to thread pool " + Thread.currentThread().getName());
                     }
                 }
             } catch (InterruptedException e) {
-                log.debug(Thread.currentThread().getName(), e);
+                log.trace(Thread.currentThread().getName(), e);
             } finally {
                 log.debug(Thread.currentThread().getName() + " is shutting down");
             }

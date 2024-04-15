@@ -1,5 +1,15 @@
-Version 0.4
------------
+
+Changelog
+==========
+
+Version 0.4.1
+-------------
+- ConnectionRunnable: Hiding some IOExceptions (Socket is closed)
+- ThreadPool set some logs to Trace
+- Abstract Handler fixed one logging error
+
+Version 0.4.0
+--------------
 * it seems there was some problem with CVS source code on sourceforge.net, so I had to
   start again from sources in zip file (last release 0.2 version)
 * change logging to Slf4j

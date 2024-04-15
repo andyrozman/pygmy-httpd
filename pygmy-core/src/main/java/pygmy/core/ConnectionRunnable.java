@@ -51,7 +51,9 @@ public class ConnectionRunnable implements Runnable {
             log.debug("Closing connection. EOF: {}", eof.getMessage());
             // do nothing
         } catch (IOException e) {
-            log.warn("IOException: {}", e.getMessage());
+            if (!"Socket is closed".equals(e.getMessage())) {
+                log.warn("IOException: {}", e.getMessage());
+            }
         } catch (Exception e) {
             log.warn("Handler threw an exception: {}", e.getMessage());
         } finally {

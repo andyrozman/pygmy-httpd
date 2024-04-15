@@ -35,13 +35,14 @@ public abstract class AbstractHandler implements Handler {
                 return handleBody(request, response);
             }
             if (log.isDebugEnabled()) {
-                log.info("'" + request.getUrl() + "' does not start with prefix '" + getUrlPrefix() + "'");
+                log.debug("'" + request.getUrl() + "' does not start with prefix '" + getUrlPrefix() + "'");
             }
         }
         return false;
     }
 
     protected boolean isRequestdForHandler(HttpRequest request) {
+        //log.debug("requestGetUrl: {}, prefix {}", request.getUrl(), getUrlPrefix());
         return request.getUrl().startsWith(getUrlPrefix());
     }
 
