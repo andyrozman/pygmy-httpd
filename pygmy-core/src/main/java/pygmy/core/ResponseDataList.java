@@ -9,7 +9,8 @@ import java.util.LinkedList;
 import java.util.List;
 
 public class ResponseDataList {
-    private List dataStreamList = new LinkedList();
+
+    List dataStreamList = new LinkedList();
 
     public void addResponse(ResponseData data) {
         dataStreamList.add(data);
@@ -39,15 +40,19 @@ public class ResponseDataList {
         return total;
     }
 
-    public void sendData(OutputStream os) throws IOException {
+    public void sendData(OutputStream os, boolean isChunkedOk) throws IOException {
         try {
+            if (getTotalLength() < 0 && isChunkedOk) {
+                os = new ChunkedEncodingOutputStream(os);
+            }
             for (Iterator it = dataStreamList.iterator(); it.hasNext(); ) {
                 ResponseData responseData = (ResponseData) it.next();
                 responseData.send(os);
             }
-            os.flush();
         } finally {
             dataStreamList.clear();
+            os.flush();
+            os.close();
         }
     }
 

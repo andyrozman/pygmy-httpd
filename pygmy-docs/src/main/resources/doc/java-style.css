@@ -1,61 +1,60 @@
 div.code {
-    margin: 0px 0px 0px 20px;
-    padding: 5px 5px 5px 20px;
-    background-color: rgb( 243, 248, 215 );
-    border: 1px solid rgb( 222, 222, 184 );
-    white-space: pre;
-    font-family: monospace;
-    font-size: 12pt;
-    overflow: auto;
+  margin: 0px 0px 0px 20px;
+  padding: 5px 5px 5px 20px;
+  background-color: #eeeeee;
+  border-top: 1px solid #000000;
+  border-left: 1px solid #000000;
+  border-right: 1px solid #000000;
+  border-bottom: 1px solid #000000;
 }
 
 a:hover {
-    text-decoration: underline;
+text-decoration: underline;
 }
 
 a {
-    text-decoration: none;
-    color: #224488;
+text-decoration: none;
+color: #224488;
 }
 
 div.title {
-    padding: 5px 15px 10px 15px;
-    background-color: #336699;
-    color: #FFFFFF;
-    border-left: 1px solid #000000;
-    border-right: 2px solid #000000;
-    border-top: 1px solid #000000;
-    font-family: Verdana, Arial, Helvetica, sans-serif;
-    font-size: 18px;
+  padding: 5px 15px 10px 15px;
+  background-color: #336699;
+  color: #FFFFFF;
+  border-left: 1px solid #000000;
+  border-right: 2px solid #000000;
+  border-top: 1px solid #000000;
+  font-family: Verdana, Arial, Helvetica, sans-serif;
+  font-size: 18;
 }
 
 font.title {
-    font-family: Verdana, Arial, Helvetica, sans-serif;
-    font-size: 18;
+  font-family: Verdana, Arial, Helvetica, sans-serif;
+  font-size: 18;
 }
 
 div.text {
-    padding: 10px 15px 10px 15px;
-    background-color: #ffffff;
-    border-top: 1px solid #000000;
-    border-left: 1px solid #000000;
-    border-right: 2px solid #000000;
-    border-bottom: 2px solid #000000;
+  padding: 10px 15px 10px 15px;
+  background-color: #ffffff;
+  border-top: 1px solid #000000;
+  border-left: 1px solid #000000;
+  border-right: 2px solid #000000;
+  border-bottom: 2px solid #000000;
 }
 
 font.code {
-    font-family: monospace;
-    font-size: 15px;
+  font-family: courier;
+  font-size: 15;
 }
 
 font.navigation {
-    font-family: monospace;
-    font-size: 12px;
+  font-family: courier;
+  font-size: 12;
 }
 
 table.inner {
     width: 100%;
-    border-width: 1px;
+    border-width: 1;
     border-style: solid;
     border-color: black;
 }

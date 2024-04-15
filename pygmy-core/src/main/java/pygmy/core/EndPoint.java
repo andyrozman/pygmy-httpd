@@ -12,8 +12,11 @@ import java.io.IOException;
  */
 public interface EndPoint {
 
-    void start(Server server) throws IOException;
+    void initialize(String name, Server server) throws IOException;
+
+    String getName();
+
+    void start();
 
     void shutdown(Server server);
-
 }

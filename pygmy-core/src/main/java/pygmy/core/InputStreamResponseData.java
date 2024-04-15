@@ -9,7 +9,7 @@ public class InputStreamResponseData implements ResponseData {
     long offset = 0;
     long length = -1;
 
-    private static final int SEND_BUFFER_SIZE = 16384;
+    private static final int SEND_BUFFER_SIZE = 4096;
 
     public InputStreamResponseData(InputStream theData, long length) {
         this.theData = theData;

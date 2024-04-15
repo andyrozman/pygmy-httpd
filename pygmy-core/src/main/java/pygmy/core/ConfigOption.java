@@ -111,5 +111,4 @@ public class ConfigOption {
     public String getName() {
         return propertyName;
     }
-
 }

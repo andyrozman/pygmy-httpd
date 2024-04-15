@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.StringTokenizer;
 
 /**
  * This is the default implementation of a chain of handlers.  The .chain parameter defines the names of the
@@ -25,28 +26,41 @@ import java.util.List;
 @Slf4j
 public class DefaultChainHandler extends AbstractHandler implements Handler {
 
-    private List chain = new ArrayList();
+    public static String CHAIN = ".chain";
 
-    public DefaultChainHandler(List chain) {
-        this.chain = chain;
+    public static final ConfigOption CHAIN_OPTION = new ConfigOption("chain", true, "A comma seperated list of handler names to chain together.");
+
+    private List chain;
+
+    public boolean initialize(String handlerName, Server server) {
+        super.initialize(handlerName, server);
+        this.chain = new ArrayList();
+        initializeChain(server);
+        return true;
     }
 
-    public boolean start(Server server) {
-        boolean success = super.start(server);
-        for (int i = 0; i < chain.size(); i++) {
-            success = success && ((Handler) chain.get(i)).start(server);
+    private void initializeChain(Server server) {
+        StringTokenizer tokenizer = new StringTokenizer(CHAIN_OPTION.getProperty(server, handlerName), " ,");
+        while (tokenizer.hasMoreTokens()) {
+            String chainChildName = tokenizer.nextToken();
+            try {
+                Handler handler = (Handler) server.constructPygmyObject(chainChildName);
+                if (handler.initialize(chainChildName, server)) {
+                    chain.add(handler);
+                } else {
+                    log.error(chainChildName + " was not initialized");
+                }
+            } catch (ClassCastException e) {
+                log.error(chainChildName + " class does not implement the Handler interface.", e);
+            }
         }
-        return success;
     }
 
     public boolean handle(Request request, Response response) throws IOException {
         boolean hasBeenHandled = false;
-        for (int i = 0; i < chain.size() && !hasBeenHandled; i++) {
-            Handler handler = (Handler) chain.get(i);
+        for (Iterator i = chain.iterator(); i.hasNext() && !hasBeenHandled; ) {
+            Handler handler = (Handler) i.next();
             hasBeenHandled = handler.handle(request, response);
-            if (hasBeenHandled) {
-                log.debug("Handled by " + i);
-            }
         }
         return hasBeenHandled;
     }
@@ -56,7 +70,8 @@ public class DefaultChainHandler extends AbstractHandler implements Handler {
         if (chain != null) {
             for (Iterator i = chain.iterator(); i.hasNext(); ) {
                 Handler current = (Handler) i.next();
-                success = success && current.shutdown(server);
+                boolean currentSuccess = current.shutdown(server);
+                success = success && currentSuccess;
             }
         }
 

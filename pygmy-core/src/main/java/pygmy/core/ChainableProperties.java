@@ -78,7 +78,6 @@ public class ChainableProperties extends Properties {
         return value;
     }
 
-
     public synchronized boolean containsKey(Object key) {
         boolean contains = super.containsKey(key);
         if (!contains && parent != null) {
@@ -107,7 +106,7 @@ public class ChainableProperties extends Properties {
         super.list(out);
         parent.list(out);
     }
-
+    
     public void list(PrintWriter out) {
         super.list(out);
         parent.list(out);

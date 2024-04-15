@@ -3,9 +3,8 @@ package pygmy.handlers;
 
 import pygmy.core.*;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.PrintWriter;
 
 /**
@@ -19,27 +18,22 @@ import java.io.PrintWriter;
 public class PrintHandler extends AbstractHandler implements Handler {
 
     public boolean handle(Request aRequest, Response aResponse) throws IOException {
-        if (aRequest instanceof HttpRequest) {
-            HttpRequest request = (HttpRequest) aRequest;
+        if( aRequest instanceof HttpRequest ) {
+            HttpRequest request = (HttpRequest)aRequest;
             HttpResponse response = (HttpResponse) aResponse;
             StringBuffer buffer = new StringBuffer();
 
-            buffer.append(request.toString());
+            buffer.append( request.toString() );
             buffer.append("\r\n");
-            // todo how to handle posts through forms and uploads!
-
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            request.getHeaders().print(new InternetOutputStream(baos));
-            InputStream stream = request.getInputStream();
-            int len = 0;
-            while ((len = stream.read()) >= 0) {
-                baos.write(len);
+            request.getHeaders().print( new InternetOutputStream( baos ) );
+            if( request.getPostData() != null ) {
+                baos.write( request.getPostData() );
             }
-            buffer.append(baos.toString(request.getCharacterEncoding()));
-
+            buffer.append( baos.toString("UTF-8") );
             response.setMimeType("text/plain");
             PrintWriter out = response.getPrintWriter();
-            out.write(buffer.toString());
+            out.write( buffer.toString() );
             return true;
         }
         return false;

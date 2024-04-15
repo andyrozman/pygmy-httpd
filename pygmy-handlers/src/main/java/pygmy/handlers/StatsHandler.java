@@ -1,62 +1,51 @@
 package pygmy.handlers;
 
-import lombok.extern.slf4j.Slf4j;
 import pygmy.core.*;
 
 import java.io.*;
-import java.util.Collections;
 import java.util.HashMap;
-import java.util.Iterator;
+import java.util.Collections;
 import java.util.Map;
+import java.util.Iterator;
 
-@Slf4j
 public class StatsHandler extends AbstractHandler {
 
-    private File filename;
-    private Handler delegate;
-    private Map statsMap = Collections.synchronizedMap(new HashMap());
+    public static final ConfigOption FILE_OPTION = new ConfigOption( "file", "stats.log", "File name for the stats." );
 
-    public StatsHandler(File filename, Handler delegate) {
-        this.filename = filename;
-        this.delegate = delegate;
+    private String filename;
+    private Map statsMap = Collections.synchronizedMap( new HashMap() );
+
+    public boolean initialize(String handlerName, Server server) {
+        super.initialize(handlerName, server);
+        filename = FILE_OPTION.getProperty( server, getName() );
+        return true;
     }
 
     protected boolean handleBody(HttpRequest request, HttpResponse response) throws IOException {
-        UrlStatistics stats = (UrlStatistics) statsMap.get(request.getUrl());
-        if (stats == null) {
-            stats = new UrlStatistics(System.currentTimeMillis());
-            statsMap.put(request.getUrl(), stats);
+        UrlStatistics stats = (UrlStatistics)statsMap.get( request.getUrl() );
+        if( stats == null ) {
+            stats = new UrlStatistics( System.currentTimeMillis() );
+            statsMap.put( request.getUrl(), stats );
         } else {
             stats.lastTime = System.currentTimeMillis();
         }
         stats.increment();
         saveStatistics();
-        return delegate.handle(request, response);
+        return false;
     }
 
     private void saveStatistics() throws IOException {
-        Writer file = new BufferedWriter(new FileWriter(filename));
+        Writer file = new BufferedWriter( new FileWriter(filename) );
         try {
-            for (Iterator i = statsMap.keySet().iterator(); i.hasNext(); ) {
+            for( Iterator i = statsMap.keySet().iterator(); i.hasNext(); ) {
                 String url = (String) i.next();
                 UrlStatistics stats = (UrlStatistics) statsMap.get(url);
-                synchronized (stats) {
-                    file.write(url + " " + stats.count() + " " + stats.getFirstTime() + " " + stats.getLastTime() + "\n");
+                synchronized( stats ) {
+                    file.write( url + " " + stats.count() + " " + stats.getFirstTime() + " " + stats.getLastTime() + "\n" );
                 }
             }
         } finally {
             file.close();
-        }
-    }
-
-    public boolean shutdown(Server server) {
-        try {
-            super.shutdown(server);
-            saveStatistics();
-            return true;
-        } catch (IOException e) {
-            log.warn("IOException: {}", e.getMessage());
-            return false;
         }
     }
 
@@ -70,7 +59,7 @@ public class StatsHandler extends AbstractHandler {
             this.lastTime = currentTime;
         }
 
-        public synchronized void lastTime(long currentTime) {
+        public synchronized void lastTime( long currentTime ) {
             lastTime = currentTime;
         }
 

@@ -26,18 +26,16 @@ public class ChunkedEncodingOutputStream extends FilterOutputStream {
         buf[count++] = (byte) b;
     }
 
-    public void write(byte b[]) throws IOException {
+    public void write(byte[] b) throws IOException {
         this.write(b, 0, b.length);
     }
 
-    public void write(byte b[], int off, int len) throws IOException {
-        int buflen = count + len > buf.length ? buf.length - count : len;
-        System.arraycopy(b, off, buf, count, buflen);
-        count += buflen;
-        if (count >= buf.length) {
-            flush();
-            count = len - buflen;
-            System.arraycopy(b, off + buflen, buf, 0, count);
+    public void write(byte[] b, int off, int len) throws IOException {
+        for (int i = off; i < len; i++) {
+            if (count >= buf.length) {
+                flush();
+            }
+            buf[count++] = b[i];
         }
     }
 
@@ -74,11 +72,6 @@ public class ChunkedEncodingOutputStream extends FilterOutputStream {
         out.write("0".getBytes());
         out.write(Http.CRLF.getBytes());
         out.write(Http.CRLF.getBytes());
-    }
-
-    public void finish() throws IOException {
-        writeChunkEnding();
-        out.flush();
     }
 
 }

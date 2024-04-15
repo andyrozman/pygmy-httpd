@@ -1,3 +1,21 @@
+Version 0.4
+-----------
+* it seems there was some problem with CVS source code on sourceforge.net, so I had to
+  start again from sources in zip file (last release 0.2 version)
+* change logging to Slf4j
+* changed some System.out.println to logs
+* changed some logging level on certain classes: ConnectionRunnable, Server, ...
+* added code pygmy-nntp, but is not maven project atm
+
+
+Version 0.3.0
+---------------
+* Imported project into github
+* change logging to Slf4j
+* changed some System.out.println to logs
+* changed some logging level on certain classes
+
+
 Version 0.2
 -----------
 * Added ConfigOption class so that Handler's could tell the user whenever they had properties misconfigured.  Helps the user from having to read JavaDoc.

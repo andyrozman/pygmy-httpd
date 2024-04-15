@@ -9,14 +9,12 @@ import java.util.List;
 @Slf4j
 public class ThreadPool {
 
-    private List threads = new ArrayList();
+    private List<Thread> threads = new ArrayList<>();
     private LinkedList queue = new LinkedList();
 
     public ThreadPool(int numberOfThreads) {
         for (int i = 0; i < numberOfThreads; i++) {
-            if (log.isDebugEnabled()) {
-                log.debug("Creating thread " + i);
-            }
+            log.debug("Creating thread " + i);
             PooledThread thread = new PooledThread("Pooled Thread " + i);
             thread.start();
             threads.add(thread);
@@ -56,7 +54,7 @@ public class ThreadPool {
                         try {
                             runnable.run();
                         } catch (Exception e) {
-                            log.warn("Exception: {}", e.getMessage()); // , e
+                            log.warn(e.toString(), e);
                         }
                     }
                     if (log.isDebugEnabled()) {
@@ -66,7 +64,7 @@ public class ThreadPool {
             } catch (InterruptedException e) {
                 log.debug(Thread.currentThread().getName(), e);
             } finally {
-                log.info(Thread.currentThread().getName() + " is shutting down");
+                log.debug(Thread.currentThread().getName() + " is shutting down");
             }
         }
 

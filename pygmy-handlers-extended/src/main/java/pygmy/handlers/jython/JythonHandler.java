@@ -6,41 +6,31 @@ import org.python.core.PySystemState;
 import org.python.util.PythonInterpreter;
 import pygmy.core.*;
 
-import java.io.File;
 import java.io.IOException;
 import java.io.Writer;
 import java.net.HttpURLConnection;
-import java.util.List;
 import java.util.Properties;
 import java.util.logging.Level;
 
 @Slf4j
 public class JythonHandler extends AbstractHandler {
 
-    File scriptsDir;
-    File pythonHome;
-    List pythonPaths;
+    private static final ConfigOption SCRIPT_DIRECTORY_OPTION = new ConfigOption("script-dir", true, "Location of the scripts you want to run.");
+
+
+    String pythonDir;
     PythonInterpreter interpreter;
-    private static final String PYTHON_HOME = "python.home";
-    private static final String PYTHON_PATH = "python.path";
+    private static final ConfigOption PYTHON_HOME = new ConfigOption("python.home", true, "Home of the jython interpreter.");
+    private static final ConfigOption PYTHON_PATH = new ConfigOption("python.path", true, "Path used to resolve jython libaries.");
 
-    public JythonHandler(File pythonHome, File scriptsDir) {
-        this.pythonHome = pythonHome;
-        this.scriptsDir = scriptsDir;
-    }
-
-    public JythonHandler addPath(String path) {
-        pythonPaths.add(path);
-        return this;
-    }
-
-    public boolean start(Server server) {
-        super.start(server);
+    public boolean initialize(String handlerName, Server server) {
+        super.initialize(handlerName, server);
+        pythonDir = SCRIPT_DIRECTORY_OPTION.getProperty(server, handlerName);
 
         Properties props = new Properties();
 
-        props.put(PYTHON_HOME, pythonHome.getAbsolutePath());
-        props.put(PYTHON_PATH, join(pythonPaths, ":"));
+        putPythonProperty(PYTHON_HOME, props);
+        putPythonProperty(PYTHON_PATH, props);
         PythonInterpreter.initialize(System.getProperties(), props, new String[0]);
 
         interpreter = new PythonInterpreter(null, new PySystemState());
@@ -51,15 +41,12 @@ public class JythonHandler extends AbstractHandler {
         return true;
     }
 
-    private String join(List list, String delimiter) {
-        StringBuilder builder = new StringBuilder();
-        for (int i = 0; i < list.size(); i++) {
-            builder.append(list.get(0));
-            if (i + 1 < list.size()) {
-                builder.append(delimiter);
-            }
+    private void putPythonProperty(ConfigOption option, Properties props) {
+        if (System.getProperty(option.getName()) == null) {
+            String pythonHome = option.getProperty(server, handlerName);
+            if (pythonHome != null)
+                props.put(option.getName(), pythonHome);
         }
-        return builder.toString();
     }
 
     protected boolean handleBody(HttpRequest request, HttpResponse response) throws IOException {
@@ -70,7 +57,7 @@ public class JythonHandler extends AbstractHandler {
                 }
                 interpreter.set("request", request);
                 interpreter.set("response", response);
-                interpreter.execfile(Http.translatePath(scriptsDir, request.getUrl()).getAbsolutePath());
+                interpreter.execfile(Http.translatePath(pythonDir, request.getUrl()).getAbsolutePath());
             } catch (PyException e) {
                 log.error(e.getMessage(), e);
                 response.sendError(HttpURLConnection.HTTP_INTERNAL_ERROR, "Script error", e);
@@ -88,7 +75,7 @@ public class JythonHandler extends AbstractHandler {
             this.level = level;
         }
 
-        public synchronized void write(char[] cbuf, int off, int len) throws IOException {
+        public synchronized void write(char cbuf[], int off, int len) throws IOException {
             buf.append(cbuf, off, len);
         }
 

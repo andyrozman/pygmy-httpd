@@ -11,34 +11,37 @@ import org.apache.bsf.BSFException;
 
 public class BsfScriptingHandler extends AbstractHandler {
 
+    private static final ConfigOption SCRIPT_DIR_OPTION = new ConfigOption("script-dir", true, "Directory path to scripts for the BSF interpreter." );
+    private static final ConfigOption LANGUAGE_OPTION = new ConfigOption("languages", true, "A comma seperated list of languages to register with the BSF." );
+    private static final ConfigOption CLASSNAME_OPTION = new ConfigOption("classname", true, "Class name of a bsf interpreter." );
+    private static final ConfigOption FILE_EXTS_OPTION = new ConfigOption("file-exts", true, "A comma seperated list of file extensions associated with this language." );
+
     private BSFManager manager;
-    private File scriptDir;
-    private String languages;
-    private String classname;
-    private String extentions;
-    private String urlPrefix;
+    private String scriptDir;
 
-
-    public boolean start(Server server) {
-        super.start(server);
+    public boolean initialize(String handlerName, Server server) {
+        super.initialize(handlerName, server);
         registerLanguages();
         manager = new BSFManager();
+        scriptDir = SCRIPT_DIR_OPTION.getProperty( server, handlerName ) ;
         return true;
     }
 
     private void registerLanguages() {
-        StringTokenizer tokenizer = new StringTokenizer( languages, "," );
+        StringTokenizer tokenizer = new StringTokenizer( LANGUAGE_OPTION.getProperty(server,handlerName), "," );
         while( tokenizer.hasMoreTokens() ) {
             String language = tokenizer.nextToken();
             if( !BSFManager.isLanguageRegistered( language ) ) {
-                BSFManager.registerScriptingEngine( language, classname, extentions.split( "," ) );
+                String classname = CLASSNAME_OPTION.getProperty( server, handlerName + "." + language ) ;
+                String fileExts = FILE_EXTS_OPTION .getProperty( server, handlerName + "." + language );
+                BSFManager.registerScriptingEngine( language, classname, fileExts.split( "," ) );
             }
         }
     }
 
     protected boolean handleBody(HttpRequest request, HttpResponse response) throws IOException {
         try {
-            File scriptFile = Http.translatePath( scriptDir, request.getUrl().substring( urlPrefix.length() ) );
+            File scriptFile = Http.translatePath( scriptDir, request.getUrl().substring( getUrlPrefix().length() ) );
             String language = BSFManager.getLangFromFilename( scriptFile.getName() );
             return executeScript( language, scriptFile, request, response );
         } catch( BSFException e ) {

@@ -21,5 +21,4 @@ public class HttpProtocolException extends ProtocolException {
     public String toString() {
         return getClass().getName() + ": " + statusCode + " " + getMessage();
     }
-
 }

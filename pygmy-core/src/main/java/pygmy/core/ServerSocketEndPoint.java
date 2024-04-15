@@ -12,58 +12,57 @@ import java.util.Properties;
 /**
  * This EndPoint provides normal sockets for the http protocol.  It can be sublasses and overriden for protocols other
  * than http.
+ *
+ * <table class="inner">
+ * <tr class="header"><td>Parameter Name</td><td>Explanation</td><td>Default Value</td><td>Required</td></tr>
+ * <tr class="row"><td>port</td><td>The port the socket should listen on.</td><td>80</td><td>No</td></tr>
+ * <tr class="altrow"><td>host</td><td>The ip or dns of the host adapter this socket should bind to.</td><td>None</td><td>No</td></tr>
+ * <tr class="row"><td>resolveHostName</td><td>If the server should do a reverse DNS on the connections so the logs will show the DNS name of the client.</td><td>false</td><td>No</td></tr>
+ * </table>
  */
 @Slf4j
 public class ServerSocketEndPoint implements EndPoint, Runnable {
+
+    private static final ConfigOption PORT_OPTION = new ConfigOption("port", "80", "HTTP server port.");
+    private static final ConfigOption RESOLVE_HOSTNAME_OPTION = new ConfigOption("resolveHostName", "false", "Resolve host names");
 
     protected ServerSocketFactory factory;
     protected ServerSocket socket;
     protected Server server;
     protected String endpointName;
-    protected boolean resolveHostName = false;
-    protected int port = 80;
-    protected int clientTimeout = 5000;
+    protected boolean resolveHostName;
 
     public ServerSocketEndPoint() {
         factory = ServerSocketFactory.getDefault();
     }
 
-    public ServerSocketEndPoint(int port) {
-        this();
-        this.port = port;
+    public void initialize(String name, Server server) throws IOException {
+        this.endpointName = name;
+        this.server = server;
+        resolveHostName = RESOLVE_HOSTNAME_OPTION.getBoolean(server, endpointName).booleanValue();
     }
 
-    public ServerSocketEndPoint resolveHostName(boolean enabled) {
-        resolveHostName = enabled;
-        return this;
-    }
-
-    public ServerSocketEndPoint port(int port) {
-        this.port = port;
-        return this;
-    }
-
-    public ServerSocketEndPoint clientTimeout(int timeout) {
-        this.clientTimeout = timeout;
-        return this;
+    public String getName() {
+        return endpointName;
     }
 
     protected ServerSocket createSocket(int port) throws IOException {
-        return factory.createServerSocket(port);
+        ServerSocket socket = factory.createServerSocket(port);
+        return socket;
     }
 
-    public void start(Server server) throws IOException {
+
+    public void start() {
         try {
-            this.server = server;
-            this.socket = createSocket(port);
-            log.info("Socket listening on port " + socket.getLocalPort());
+            this.socket = createSocket(PORT_OPTION.getInteger(server, endpointName).intValue());
+            log.debug("Socket listening on port " + socket.getLocalPort());
             Thread thread = new Thread(this, endpointName + "[" + socket.getLocalPort() + "] ServerSocketEndPoint");
             thread.setDaemon(true);
             thread.start();
         } catch (IOException e) {
             log.debug("IOException ignored: {}", e.getMessage());
         } catch (NumberFormatException e) {
-            log.debug("NumberFormatException ignored, {}", e.getMessage());
+            log.debug("NumberFormatException ignored: {}", e.getMessage());
         }
     }
 
@@ -72,7 +71,6 @@ public class ServerSocketEndPoint implements EndPoint, Runnable {
             while (true) {
                 Socket client = socket.accept();
                 Properties config = new ChainableProperties(server.getConfig());
-                client.setSoTimeout(clientTimeout);
                 Runnable runnable = createRunnable(client, config);
                 if (resolveHostName) {
                     // after resolving, the host name appears Socket.toString.
@@ -85,7 +83,7 @@ public class ServerSocketEndPoint implements EndPoint, Runnable {
                 server.post(runnable);
             }
         } catch (IOException e) {
-            log.debug("IOException ignored. Ex.: {}", e.getMessage());
+            log.debug("IOException ignored: {}", e.getMessage());
         }
     }
 
@@ -95,20 +93,13 @@ public class ServerSocketEndPoint implements EndPoint, Runnable {
         return socket.getLocalAddress().getHostName();
     }
 
-    public InetAddress getAddress() {
-        return socket.getInetAddress();
-    }
-
-    public int getPort() {
-        return port;
-    }
-
     protected String getProtocol() {
         return "http";
     }
 
     protected Runnable createRunnable(Socket client, Properties config) throws IOException {
-        return new ConnectionRunnable(server, getProtocol(), client, config);
+        ConnectionRunnable runnable = new ConnectionRunnable(server, getProtocol(), client, config);
+        return runnable;
     }
 
     public void shutdown(Server server) {

@@ -22,11 +22,8 @@ public class SingleThreadedHttpEndPoint implements EndPoint, Runnable {
     private Thread mainThread;
     private int socketPort = 80;
 
-    public String getName() {
-        return endpointName;
-    }
-
-    public void start(Server server) throws IOException {
+    public void initialize(String name, Server server) throws IOException {
+        this.endpointName = name;
         this.server = server;
         try {
             socketPort = PORT_OPTION.getInteger(server, endpointName).intValue();
@@ -34,11 +31,17 @@ public class SingleThreadedHttpEndPoint implements EndPoint, Runnable {
         }
         int size = 1024;
         try {
-            size = BUFFER_SIZE_OPTION.getInteger(server, endpointName);
+            size = BUFFER_SIZE_OPTION.getInteger(server, endpointName).intValue();
         } catch (NumberFormatException e) {
         }
         byteBuffer = ByteBuffer.allocateDirect(size);
+    }
 
+    public String getName() {
+        return endpointName;
+    }
+
+    public void start() {
         mainThread = new Thread(this, endpointName + "[" + socketPort + "] ServerSocketEndPoint");
         mainThread.setDaemon(true);
         mainThread.start();
@@ -53,7 +56,7 @@ public class SingleThreadedHttpEndPoint implements EndPoint, Runnable {
                 keepProcessing = processIncomingConnections(selector);
             }
         } catch (IOException e) {
-            log.error("run(). IOException: {}", e.getMessage());
+            log.error("IOException: {}", e.getMessage(), e);
         } finally {
             if (selector != null) {
                 try {
@@ -84,7 +87,7 @@ public class SingleThreadedHttpEndPoint implements EndPoint, Runnable {
                 }
             }
         } catch (Exception e) {
-            log.error("Exception on processing incoming connections: {}", e.getMessage());
+            log.error("Exception: {}", e.getMessage(), e);
         }
         return true;
     }
@@ -144,9 +147,9 @@ public class SingleThreadedHttpEndPoint implements EndPoint, Runnable {
     }
 
     public interface DirectionalTransfer {
-        public void transfer(ByteBuffer data) throws IOException;
+        void transfer(ByteBuffer data) throws IOException;
 
-        public void closeClient() throws IOException;
+        void closeClient() throws IOException;
     }
 
     public static class Client {
@@ -212,7 +215,7 @@ public class SingleThreadedHttpEndPoint implements EndPoint, Runnable {
         public void transfer(ByteBuffer data) throws IOException {
             int count = client.in.sink().write(data);
             if (count == 0 || data.hasRemaining()) {
-                log.debug("Count: " + count + " remaning: " + data.hasRemaining());
+                log.debug("Count: " + count + " remaing: " + data.hasRemaining());
             }
         }
 

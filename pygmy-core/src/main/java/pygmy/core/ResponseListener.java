@@ -16,7 +16,7 @@ public interface ResponseListener {
      *
      * @param request the request that is being respond to.
      */
-    void startTransfer(HttpRequest request);
+    public void startTransfer(HttpRequest request);
 
     /**
      * This method is called at regular intervals to notify the progress of a HttpResponse transmission.  The number of
@@ -27,7 +27,7 @@ public interface ResponseListener {
      * @param totalLength the total length of the data being sent in bytes.  Can be -1 for an unknown total.
      * @throws IOException throws an IOException if a ResponseListener wishes to interrupt the transmission.
      */
-    void notify(HttpRequest request, int bytesSent, int totalLength) throws IOException;
+    public void notify(HttpRequest request, int bytesSent, int totalLength) throws IOException;
 
     /**
      * This method is called once the transmission of the HttpResponse has concluded.
@@ -35,6 +35,6 @@ public interface ResponseListener {
      * @param request the request that is being respond to.
      * @param e       the exception if there was one that ended the transmission.  It is null if it completed successfully.
      */
-    void endTransfer(HttpRequest request, Exception e);
+    public void endTransfer(HttpRequest request, Exception e);
 
 }

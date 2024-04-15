@@ -1,47 +1,41 @@
 package pygmy.handlers.groovy;
 
+import groovy.lang.Binding;
+import groovy.lang.GroovyShell;
 import lombok.extern.slf4j.Slf4j;
 import pygmy.core.*;
 
-import java.util.logging.Logger;
-import java.util.logging.Level;
-import java.io.IOException;
 import java.io.File;
+import java.io.IOException;
 import java.net.HttpURLConnection;
-
-import groovy.lang.GroovyShell;
-import groovy.lang.Binding;
-import org.codehaus.groovy.syntax.SyntaxException;
 
 @Slf4j
 public class GroovyHandler extends AbstractHandler {
-    //private static final Logger log = Logger.getLogger( GroovyHandler.class.getName() );
 
-    private File scriptsDir;
+    public static final ConfigOption SCRIPT_DIRECTORY_OPTION = new ConfigOption("script-dir", true, "The directory where scripts are located.");
 
-    public GroovyHandler(File scriptsDir) {
-        this.scriptsDir = scriptsDir;
-    }
+    String groovyDir;
 
-    public boolean start(Server server) {
-        super.start(server);
+    public boolean initialize(String handlerName, Server server) {
+        super.initialize(handlerName, server);
+        groovyDir = SCRIPT_DIRECTORY_OPTION.getProperty(server, handlerName);
         return true;
     }
 
     protected boolean handleBody(HttpRequest request, HttpResponse response) throws IOException {
-        if( request.getUrl().endsWith(".groovy") ) {
-            if( log.isInfoEnabled()) {
-                log.info("Executing script: " + request.getUrl() );
+        if (request.getUrl().endsWith(".groovy")) {
+            if (log.isInfoEnabled()) {
+                log.info("Executing script: " + request.getUrl());
             }
             Binding binding = createScriptContext(request, response);
 
             try {
-                GroovyShell shell = new GroovyShell( binding );
-                File groovyScript = Http.translatePath(scriptsDir, request.getUrl() );
-                if( groovyScript.exists() ) {
-                    shell.evaluate( groovyScript.getAbsolutePath() );
+                GroovyShell shell = new GroovyShell(binding);
+                File groovyScript = Http.translatePath(groovyDir, request.getUrl());
+                if (groovyScript.exists()) {
+                    shell.evaluate(groovyScript.getAbsolutePath());
                 } else {
-                    response.sendError( HttpURLConnection.HTTP_NOT_FOUND, request.getUrl() + " not found.");
+                    response.sendError(HttpURLConnection.HTTP_NOT_FOUND, request.getUrl() + " not found.");
                 }
             }
 //            catch (ClassNotFoundException e) {
@@ -52,13 +46,9 @@ public class GroovyHandler extends AbstractHandler {
 //                log.error( e.getMessage(), e );
 //                response.sendError( HttpURLConnection.HTTP_INTERNAL_ERROR, "Script error", e);
 //            }
-            catch (IOException e) {
-                log.error( e.getMessage(), e );
-                response.sendError( HttpURLConnection.HTTP_INTERNAL_ERROR, "Script error", e);
-            }
             catch (Exception e) {
-                log.error( e.getMessage(), e );
-                response.sendError( HttpURLConnection.HTTP_INTERNAL_ERROR, "Script error", e);
+                log.error(e.getMessage(), e);
+                response.sendError(HttpURLConnection.HTTP_INTERNAL_ERROR, "Script error", e);
             }
             return true;
         }

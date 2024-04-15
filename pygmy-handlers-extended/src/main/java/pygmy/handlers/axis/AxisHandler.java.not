@@ -1,0 +1,386 @@
+package pygmy.handlers.axis;
+
+import pygmy.core.AbstractHandler;
+import pygmy.core.HttpRequest;
+import pygmy.core.HttpResponse;
+import pygmy.core.Server;
+
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.io.ByteArrayInputStream;
+import java.util.*;
+import java.util.logging.Logger;
+import java.util.logging.Level;
+import java.net.HttpURLConnection;
+
+import org.apache.axis.*;
+import org.apache.axis.utils.XMLUtils;
+import org.apache.axis.utils.Messages;
+import org.apache.axis.utils.Admin;
+import org.apache.axis.transport.http.HTTPConstants;
+import org.apache.axis.transport.http.HTTPTransport;
+import org.apache.axis.server.AxisServer;
+import org.apache.axis.configuration.EngineConfigurationFactoryFinder;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+
+import javax.servlet.http.HttpServletResponse;
+
+
+
+/**
+ * Created by IntelliJ IDEA.
+ * User: Charlie
+ * Date: Jul 13, 2004
+ * Time: 6:00:08 AM
+ * To change this template use Options | File Templates.
+ */
+public class AxisHandler extends AbstractHandler {
+    private static final Logger log = Logger.getLogger( AxisHandler.class.getName() );
+
+    private AxisServer engine = null;
+    private boolean allowList = true;
+    private String jwsClassDir;
+
+    public boolean initialize(String handlerName, Server server) {
+        super.initialize(handlerName, server);
+        allowList = Boolean.valueOf( getHandlerProperty( "allowList", "true" ) ).booleanValue();
+        jwsClassDir = getHandlerProperty( "jwsClassDir" );
+        return true;
+    }
+
+    protected boolean handleBody(HttpRequest request, HttpResponse response) throws IOException {
+        AxisEngine engine = getEngine();
+
+        if( request.getUrl().endsWith(".jws") ) {
+//            return respondJws( request, response );
+        } else {
+            boolean isWdsl = request.getQuery().equalsIgnoreCase("wdsl");
+            boolean isList = request.getQuery().equalsIgnoreCase("list");
+            MessageContext msgContext = createMessageContext(engine, request, response);
+            if( isWdsl ) {
+                msgContext.setProperty(MessageContext.TRANS_URL, request.getUrl());
+                processWsdlRequest(msgContext, response);
+            }
+
+            if( isList ) {
+                processListRequest(response, response.getPrintWriter());
+            }
+
+
+        }
+
+
+//        SOAPService s = engine.getService(serviceName);
+//        if( s == null ) {
+//            reportServiceUnknown( serviceName, request, response );
+//        }
+        return true;
+    }
+
+    public AxisServer getEngine() throws AxisFault {
+        if (log.isLoggable( Level.FINE ) ) {
+            log.fine("Enter: getEngine()");
+        }
+
+        synchronized( this ) {
+            if (engine == null) {
+                Map environment = getEngineEnvironment();
+                engine = AxisServer.getServer(environment);
+            }
+        }
+
+        if (log.isLoggable( Level.FINE ) ) {
+            log.fine("Exit: getEngine()");
+        }
+
+        return engine;
+    }
+
+    protected Map getEngineEnvironment() {
+        Map environment = new HashMap();
+
+        String attdir= getHandlerProperty(AxisEngine.ENV_ATTACHMENT_DIR);
+        if (attdir != null) {
+            environment.put(AxisEngine.ENV_ATTACHMENT_DIR, attdir);
+        }
+//        environment.put(AxisEngine.ENV_SERVLET_CONTEXT, context);
+//        String webInfPath = getHandlerProperty( "web-inf" );
+//        if (webInfPath != null) {
+//            environment.put(AxisEngine.ENV_SERVLET_REALPATH,
+//                            webInfPath + File.separator + "attachments");
+//        }
+
+        EngineConfiguration config =
+            EngineConfigurationFactoryFinder.newFactory().getServerEngineConfig();
+
+        if (config != null) {
+            environment.put(EngineConfiguration.PROPERTY_NAME, config);
+        }
+
+        return environment;
+    }
+
+    protected void processListRequest(HttpResponse response, PrintWriter writer) throws AxisFault {
+        AxisEngine engine = getEngine();
+        if (allowList) {
+            Document doc = Admin.listConfig(engine);
+            if (doc != null) {
+                response.setMimeType("text/xml");
+                XMLUtils.DocumentToWriter(doc, writer);
+            } else {
+                //error code is 404
+                response.setStatusCode(HttpURLConnection.HTTP_NOT_FOUND);
+                response.setMimeType("text/html");
+                writer.println("<h2>" +
+                               Messages.getMessage("error00") +
+                               "</h2>");
+                writer.println("<p>" +
+                               Messages.getMessage("noDeploy00") +
+                               "</p>");
+            }
+        } else {
+            // list not enable, return error
+            //error code is, what, 401
+            response.setStatusCode(HttpURLConnection.HTTP_FORBIDDEN);
+            response.setMimeType("text/html");
+            writer.println("<h2>" +
+                           Messages.getMessage("error00") +
+                           "</h2>");
+            writer.println("<p><i>?list</i> " +
+                           Messages.getMessage("disabled00") +
+                           "</p>");
+        }
+    }
+
+    private void processWsdlRequest(MessageContext msgContext, HttpResponse response) throws AxisFault {
+        AxisEngine engine = getEngine();
+        PrintWriter writer = response.getPrintWriter();
+        try {
+            engine.generateWSDL(msgContext);
+            Document doc = (Document) msgContext.getProperty("WSDL");
+            if (doc != null) {
+                response.setMimeType("text/xml");
+                XMLUtils.DocumentToWriter(doc, writer);
+            } else {
+                if ( log.isLoggable( Level.FINE ) ) {
+                    log.fine("processWsdlRequest: failed to create WSDL");
+                }
+                reportNoWSDL(response, writer, "noWSDL02", null);
+            }
+        } catch (AxisFault axisFault) {
+            //the no-service fault is mapped to a no-wsdl error
+            if(axisFault.getFaultCode().equals(Constants.QNAME_NO_SERVICE_FAULT_CODE)) {
+                processAxisFault(axisFault);
+                reportNoWSDL(response, writer, "noWSDL01", axisFault);
+            } else {
+                //all other faults get thrown
+                throw axisFault;
+            }
+        }
+    }
+
+    protected void reportNoWSDL(HttpResponse res, PrintWriter writer,
+                                String moreDetailCode, AxisFault axisFault) {
+        res.setStatusCode(HttpURLConnection.HTTP_NOT_FOUND);
+        res.setMimeType("text/html");
+        writer.println("<h2>" +
+                       Messages.getMessage("error00") +
+                       "</h2>");
+        writer.println("<p>" +
+                       Messages.getMessage("noWSDL00") +
+                       "</p>");
+        if(moreDetailCode!=null) {
+            writer.println("<p>"
+                    +Messages.getMessage(moreDetailCode)
+                    +"</p>");
+        }
+
+        if(axisFault!=null) {
+            writeFault(writer, axisFault);
+        }
+    }
+
+    private void writeFault(PrintWriter writer, AxisFault axisFault) {
+        String localizedMessage = XMLUtils.xmlEncodeString(axisFault.getLocalizedMessage());
+        writer.println("<pre>Fault - " + localizedMessage + "<br>");
+        writer.println(axisFault.dumpToString());
+        writer.println("</pre>");
+    }
+
+    private MessageContext createMessageContext(AxisEngine engine, HttpRequest request, HttpResponse response) {
+        MessageContext msgContext = new MessageContext( engine );
+
+        msgContext.setTransportName(getTransportName());
+        msgContext.setProperty(Constants.MC_JWS_CLASSDIR, jwsClassDir);
+        msgContext.setProperty(Constants.MC_HOME_DIR, getHomeDir());
+//        msgContext.setProperty(Constants.MC_RELATIVE_PATH,
+//                               req.getServletPath());
+        msgContext.setProperty(HTTPConstants.HEADER_AUTHORIZATION,
+                               request.getRequestHeader(HTTPConstants.HEADER_AUTHORIZATION));
+        msgContext.setProperty(Constants.MC_REMOTE_ADDR, request.getRemoteAddr());
+
+//        msgContext.setProperty(Constants.MC_CONFIGPATH, getWebInfPath());
+        String url = request.getUrl();
+        msgContext.setProperty(MessageContext.TRANS_URL, url);
+        return msgContext;
+    }
+
+    private String getHomeDir() {
+        return getHandlerProperty("home.dir");
+    }
+
+    private String getTransportName() {
+        return getHandlerProperty("transport.name", HTTPTransport.DEFAULT_TRANSPORT_NAME);
+    }
+
+    protected void processMethodRequest(MessageContext msgContext,
+                                        HttpRequest request,
+                                        HttpResponse response,
+                                        PrintWriter writer) throws AxisFault {
+        Set paramSet = request.getParameterNames();
+        String method = null;
+        String args = "";
+        Iterator it = paramSet.iterator();
+        while ( it.hasNext() ) {
+            String param = (String) it.next();
+            if (param.equalsIgnoreCase("method")) {
+                method = request.getParameter(param);
+            } else {
+                args += "<" + param + ">" +
+                    request.getParameter(param) +
+                    "</" + param + ">";
+            }
+        }
+
+        if (method == null) {
+            response.setMimeType("text/html");
+            response.setStatusCode(HttpURLConnection.HTTP_BAD_REQUEST);
+            writer.println("<h2>" +
+                           Messages.getMessage("error00") +
+                           ":  " +
+                           Messages.getMessage("invokeGet00") +
+                           "</h2>");
+            writer.println("<p>" +
+                           Messages.getMessage("noMethod01") +
+                           "</p>");
+        } else {
+            invokeEndpointFromGet(msgContext, response, writer, method, args);
+        }
+    }
+
+    protected void invokeEndpointFromGet(MessageContext msgContext,
+                                       HttpResponse response,
+                                       PrintWriter writer,
+                                       String method,
+                                       String args) throws AxisFault {
+        String body =
+            "<" + method + ">" + args + "</" + method + ">";
+
+        String msgtxt =
+            "<SOAP-ENV:Envelope" +
+            " xmlns:SOAP-ENV=\"http://schemas.xmlsoap.org/soap/envelope/\">" +
+            "<SOAP-ENV:Body>" + body + "</SOAP-ENV:Body>" +
+            "</SOAP-ENV:Envelope>";
+
+        Message responseMsg=null;
+        try {
+            ByteArrayInputStream istream =
+                new ByteArrayInputStream(msgtxt.getBytes(XMLUtils.charEncoding));
+
+            AxisEngine engine = getEngine();
+            Message msg = new Message(istream, false);
+            msgContext.setRequestMessage(msg);
+            engine.invoke(msgContext);
+            responseMsg = msgContext.getResponseMessage();
+            //turn off caching for GET requests
+            response.addHeader("Cache-Control", "no-cache");
+            response.addHeader("Pragma", "no-cache");
+            if (responseMsg == null) {
+                //tell everyone that something is wrong
+                throw new Exception(Messages.getMessage("noResponse01"));
+            }
+        } catch (AxisFault fault) {
+            processAxisFault(fault);
+            configureResponseFromAxisFault(response, fault);
+            if (responseMsg == null) {
+                responseMsg = new Message(fault);
+            }
+        } catch (Exception e) {
+            response.setStatusCode(HttpURLConnection.HTTP_INTERNAL_ERROR);
+            responseMsg = convertExceptionToAxisFault(e,responseMsg);
+        }
+        //this call could throw an AxisFault. We delegate it up, because
+        //if we cant write the message there is not a lot we can do in pure SOAP terms.
+        response.setMimeType("text/xml");
+        writer.println(responseMsg.getSOAPPartAsString());
+    }
+
+
+    private void configureResponseFromAxisFault(HttpResponse response,
+                                                AxisFault fault) {
+        // then get the status code
+        // It's been suggested that a lack of SOAPAction
+        // should produce some other error code (in the 400s)...
+        int status = getHttpServletResponseStatus(fault);
+        if (status == HttpServletResponse.SC_UNAUTHORIZED) {
+            // unauth access results in authentication request
+            // TODO: less generic realm choice?
+          response.addHeader("WWW-Authenticate","Basic realm=\"AXIS\"");
+        }
+        response.setStatusCode(status);
+    }
+
+    /**
+ * turn any Exception into an AxisFault, log it, set the response
+ * status code according to what the specifications say and
+ * return a response message for posting. This will be the response
+ * message passed in if non-null; one generated from the fault otherwise.
+ *
+ * @param exception what went wrong
+ * @param responseMsg what response we have (if any)
+ * @return a response message to send to the user
+ */
+    private Message convertExceptionToAxisFault(Exception exception,
+                                                Message responseMsg) {
+        logException(exception);
+        if (responseMsg == null) {
+            AxisFault fault=AxisFault.makeFault(exception);
+            processAxisFault(fault);
+            responseMsg = new Message(fault);
+        }
+        return responseMsg;
+    }
+
+    protected int getHttpServletResponseStatus(AxisFault af) {
+        // TODO: Should really be doing this with explicit AxisFault
+        // subclasses... --Glen
+                return af.getFaultCode().getLocalPart().startsWith("Server.Unauth")
+                         ? HttpServletResponse.SC_UNAUTHORIZED
+                         : HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
+               // This will raise a 401 for both
+               // "Unauthenticated" & "Unauthorized"...
+    }
+
+    protected void processAxisFault(AxisFault fault) {
+        //log the fault
+        Element runtimeException = fault.lookupFaultDetail(
+                Constants.QNAME_FAULTDETAIL_RUNTIMEEXCEPTION);
+        if (runtimeException != null) {
+            log.info( Messages.getMessage("axisFault00"), fault);
+            //strip runtime details
+            fault.removeFaultDetail(Constants.QNAME_FAULTDETAIL_RUNTIMEEXCEPTION);
+        } else if (log.isLoggable( Level.FINE )) {
+            log.log(Level.FINE, Messages.getMessage("axisFault00"), fault);
+        }
+        //dev systems only give fault dumps
+//        if (!isDevelopment()) {
+            //strip out the stack trace
+            fault.removeFaultDetail(Constants.QNAME_FAULTDETAIL_STACKTRACE);
+//        }
+    }
+
+    protected void logException(Exception e) {
+        log.log(Level.FINE, Messages.getMessage("exception00"), e);
+    }
+}

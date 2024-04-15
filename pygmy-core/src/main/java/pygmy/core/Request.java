@@ -45,5 +45,4 @@ public abstract class Request {
     public int getRemotePort() {
         return connection.getPort();
     }
-
 }

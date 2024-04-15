@@ -4,7 +4,6 @@ import lombok.extern.slf4j.Slf4j;
 
 import java.io.EOFException;
 import java.io.IOException;
-import java.io.InterruptedIOException;
 import java.net.HttpURLConnection;
 import java.net.Socket;
 import java.util.Properties;
@@ -29,34 +28,32 @@ public class ConnectionRunnable implements Runnable {
             boolean next = false;
             do {
                 HttpRequest request = createRequest();
-                if (!connection.isClosed() && request.readRequest(connection.getInputStream())) {
+                if (request.readRequest(connection.getInputStream())) {
                     HttpResponse response = new HttpResponse(request, connection.getOutputStream(), server.getResponseListeners());
-                    if (log.isInfoEnabled()) {
-                        log.info(connection.getInetAddress().getHostAddress() + ":" + connection.getPort() + " - " + request.getUrl());
+                    if (log.isDebugEnabled()) {
+                        log.debug(connection.getInetAddress().getHostAddress() + ":" + connection.getPort() + " - " + request.getUrl());
                     }
                     if (!server.post(request, response)) {
                         response.sendError(HttpURLConnection.HTTP_NOT_FOUND, " was not found on this server.");
                     }
                     next = response.isKeepAlive();
                     if (!next) {
-                        log.info("Closing connection.");
+                        log.debug("Closing connection.");
                         response.addHeader("Connection", "close");
                     }
                     response.commitResponse();
                 } else {
-                    log.info("No request sent.  Closing connection.");
+                    log.debug("No request sent.  Closing connection.");
                     next = false;
                 }
             } while (next);
         } catch (EOFException eof) {
-            log.debug("Closing connection");
+            log.debug("Closing connection. EOF: {}", eof.getMessage());
             // do nothing
-        } catch (InterruptedIOException io) {
-            log.debug("Client timed out.  Closing connection.");
         } catch (IOException e) {
-            log.warn("IOException", e);
+            log.warn("IOException: {}", e.getMessage());
         } catch (Exception e) {
-            log.warn("Handler threw an exception.", e);
+            log.warn("Handler threw an exception: {}", e.getMessage());
         } finally {
             try {
                 connection.close();

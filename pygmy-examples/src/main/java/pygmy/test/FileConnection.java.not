@@ -1,0 +1,40 @@
+package pygmy.test;
+
+import pygmy.core.Connection;
+
+import java.io.*;
+
+public class FileConnection implements Connection {
+
+    File requestFile;
+    File responseFile;
+
+    InputStream reader;
+    PrintStream writer;
+
+    public FileConnection(File requestFile, File responseFile) throws IOException {
+        this.requestFile = requestFile;
+        this.responseFile = responseFile;
+
+        reader = new BufferedInputStream( new FileInputStream(requestFile) );
+        writer = new PrintStream( new BufferedOutputStream( new FileOutputStream(responseFile) ) );
+    }
+
+    public void println(String buffer) throws IOException {
+        writer.println( buffer );
+    }
+
+    public InputStream getInputStream() {
+        return reader;
+    }
+
+    public OutputStream getOutputStream() {
+        return writer;
+    }
+
+    public void close() throws IOException {
+        reader.close();
+        writer.flush();
+        writer.close();
+    }
+}

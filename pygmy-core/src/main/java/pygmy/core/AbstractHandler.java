@@ -1,26 +1,48 @@
 package pygmy.core;
 
+import lombok.extern.slf4j.Slf4j;
+
 import java.io.IOException;
 
+@Slf4j
 public abstract class AbstractHandler implements Handler {
 
     protected Server server;
+    protected String handlerName;
+    protected String urlPrefix;
+
+    public static final ConfigOption URL_PREFIX_OPTION = new ConfigOption("url-prefix", "/", "URL prefix path for this handler.  Anything that matches starts with this prefix will be handled by this handler.");
 
     public AbstractHandler() {
     }
 
-    public boolean start(Server server) {
+    public boolean initialize(String handlerName, Server server) {
         this.server = server;
+        this.handlerName = handlerName;
+        this.urlPrefix = URL_PREFIX_OPTION.getProperty(server, handlerName);
         return true;
     }
 
-    public boolean handle( Request aRequest, Response aResponse) throws IOException {
-        if( aRequest instanceof HttpRequest ) {
+    public String getName() {
+        return handlerName;
+    }
+
+    public boolean handle(Request aRequest, Response aResponse) throws IOException {
+        if (aRequest instanceof HttpRequest) {
             HttpRequest request = (HttpRequest) aRequest;
             HttpResponse response = (HttpResponse) aResponse;
-            return handleBody( request, response );
+            if (isRequestdForHandler(request)) {
+                return handleBody(request, response);
+            }
+            if (log.isDebugEnabled()) {
+                log.info("'" + request.getUrl() + "' does not start with prefix '" + getUrlPrefix() + "'");
+            }
         }
         return false;
+    }
+
+    protected boolean isRequestdForHandler(HttpRequest request) {
+        return request.getUrl().startsWith(getUrlPrefix());
     }
 
     protected boolean handleBody(HttpRequest request, HttpResponse response) throws IOException {
@@ -31,11 +53,15 @@ public abstract class AbstractHandler implements Handler {
         return true;
     }
 
-    protected String getMimeType( String filename ) {
+    public String getUrlPrefix() {
+        return urlPrefix;
+    }
+
+    protected String getMimeType(String filename) {
         int index = filename.lastIndexOf(".");
-        String mimeType = "application/octet-stream";
-        if( index > 0 ) {
-            mimeType = server.getProperty( "mime" + filename.substring( index ).toLowerCase(), mimeType );
+        String mimeType = null;
+        if (index > 0) {
+            mimeType = server.getProperty("mime" + filename.substring(index).toLowerCase());
         }
 
         return mimeType;

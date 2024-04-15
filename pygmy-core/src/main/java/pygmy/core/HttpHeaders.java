@@ -1,80 +1,42 @@
 package pygmy.core;
 
 import java.io.IOException;
-import java.util.*;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 public class HttpHeaders {
-    public static final String CONNECTION = "Connection";
-
-    private Map<String, String> map;
-    private Integer contentLength = null;
-    private String charset = "ISO-8859-1";
-    private String contentType = null;
+    private Map map;
 
     public HttpHeaders() {
-        this.map = new LinkedHashMap<String, String>();
+        this.map = new LinkedHashMap();
     }
 
     public HttpHeaders(InternetInputStream stream) throws IOException {
         this();
-        this.map = stream.readHeader();
-        Map<String, String> options = getHeaderOptions("Content-Type");
-        contentType = options.get("Content-Type");
-        if (options.containsKey("charset")) {
-            charset = options.get("charset");
-        }
-    }
-
-    public static List<Map<String, String>> getHeaderListOptions(Map<String, String> headers, String key) {
-        String value = headers.get(key);
-        if (value != null) {
-            List<Map<String, String>> options = new ArrayList<Map<String, String>>();
-            String[] valuesSplit = value.split(",");
-            for (String v : valuesSplit) {
-                options.add(parseForOptions(key, v));
+        String currentKey = null;
+        while (true) {
+            String line = stream.readline();
+            if ((line == null) || (line.length() == 0)) {
+                break;
             }
-            return options;
-        } else {
-            return Collections.emptyList();
-        }
-    }
 
-    public static Map<String, String> getHeaderOptions(Map<String, String> headers, String key) {
-        String value = headers.get(key);
-        if (value != null) {
-            return parseForOptions(key, value);
-        } else {
-            return Collections.emptyMap();
-        }
-    }
-
-    private static Map<String, String> parseForOptions(String key, String value) {
-        String[] valueSplit = value.split(";");
-        Map<String, String> options = new HashMap<String, String>();
-        options.put(key, valueSplit[0]);
-        for (int i = 1; i < valueSplit.length; i++) {
-            String option = valueSplit[i];
-            String[] pair = option.split("=");
-            if (pair.length == 2) {
-                // only do this if there are two values.
-                String v = pair[1].trim();
-                if (v.startsWith("\"") && v.endsWith("\"")) v = v.substring(1, v.length() - 1);
-                options.put(pair[0].trim(), v);
+            if (!Character.isSpaceChar(line.charAt(0))) {
+                int index = line.indexOf(':');
+                if (index >= 0) {
+                    currentKey = line.substring(0, index).trim();
+                    String value = line.substring(index + 1).trim();
+                    put(currentKey, value);
+                }
+            } else if (currentKey != null) {
+                String value = get(currentKey);
+                put(currentKey, value + "\r\n\t" + line.trim());
             }
         }
-        return options;
-    }
-
-    public Map<String, String> getHeaderOptions(String key) {
-        return HttpHeaders.getHeaderOptions(map, key);
-    }
-
-    public List<Map<String, String>> getHeaderListOptions(String key) {
-        return HttpHeaders.getHeaderListOptions(map, key);
     }
 
     public String get(String key) {
-        return map.get(key);
+        return (String) map.get(key);
     }
 
     public String get(String key, String defaultValue) {
@@ -106,30 +68,5 @@ public class HttpHeaders {
 
         stream.println();
         stream.flush();
-    }
-
-    public Integer getContentLength() {
-        if (contentLength == null && map.containsKey("Content-Length")) {
-            contentLength = Integer.parseInt(map.get("Content-Length"));
-        }
-        return contentLength;
-    }
-
-    public String getCharset() {
-        return charset;
-    }
-
-    public String getContentType() {
-        return contentType;
-    }
-
-    public boolean isKeepAlive() {
-        if ("Keep-Alive".equalsIgnoreCase(get("Connection"))) {
-            return true;
-        } else if ("close".equalsIgnoreCase(get("Connection"))) {
-            return false;
-        } else {
-            return false;
-        }
     }
 }

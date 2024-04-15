@@ -43,12 +43,12 @@ public class NonBlockingRunnable implements Runnable {
                 }
             } while (next);
         } catch (EOFException eof) {
-            log.debug("Closing connection. EOF Exception: {}", eof.getMessage());
+            log.debug("Closing connection");
             // do nothing
         } catch (IOException e) {
-            log.error("IOException", e);
+            log.error("IOException: {}", e.getMessage());
         } catch (Exception e) {
-            log.warn("Handler threw an exception.", e);
+            log.warn("Handler threw an exception: {}", e.getMessage());
         } finally {
             try {
                 is.close();

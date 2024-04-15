@@ -85,5 +85,5 @@ public class UrlMatch {
     public void setTrailing(String trailing) {
         this.trailing = trailing;
     }
-    
+
 }

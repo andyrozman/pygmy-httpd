@@ -11,8 +11,8 @@ public class WebServer {
 
     public static void main(String[] args) throws IOException {
         Server server = new Server();
-        server.add("http", new ServerSocketEndPoint(8090));
-        server.add(new UrlRule("/"), new FileHandler( args[0] ).allowDirectoryListing(true) );
+        server.addEndPoint("http", new ServerSocketEndPoint(8090));
+        server.addEndPoint(new UrlRule("/"), new FileHandler( args[0] ).allowDirectoryListing(true) );
         server.start();
         System.out.println("Press Any Key to Stop.");
         System.in.read();

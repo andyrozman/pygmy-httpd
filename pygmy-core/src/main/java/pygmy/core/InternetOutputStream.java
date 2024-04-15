@@ -1,38 +1,17 @@
 package pygmy.core;
 
 import java.io.BufferedOutputStream;
-import java.io.FilterOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.util.zip.Deflater;
-import java.util.zip.DeflaterOutputStream;
-import java.util.zip.GZIPOutputStream;
 
-public class InternetOutputStream extends FilterOutputStream {
-
-    private String encoding;
-    private ChunkedEncodingOutputStream chunkedStream;
+public class InternetOutputStream extends BufferedOutputStream {
 
     public InternetOutputStream(OutputStream out) {
-        super(new BufferedOutputStream(out));
+        super(out);
     }
 
     public InternetOutputStream(OutputStream out, int size) {
-        super(new BufferedOutputStream(out, size));
-    }
-
-    public String getEncoding() {
-        return encoding;
-    }
-
-    public void setEncoding(String encoding) throws IOException {
-        this.encoding = encoding;
-        out.flush();
-        if (encoding.equalsIgnoreCase("gzip") || encoding.equalsIgnoreCase("x-gzip")) {
-            out = new GZIPOutputStream(out);
-        } else if (encoding.equalsIgnoreCase("compress") || encoding.equalsIgnoreCase("x-compress")) {
-            out = new DeflaterOutputStream(out, new Deflater());
-        }
+        super(out, size);
     }
 
     public void print(String buffer) throws IOException {
@@ -59,19 +38,5 @@ public class InternetOutputStream extends FilterOutputStream {
     public void println(int i) throws IOException {
         print(i);
         println();
-    }
-
-    public void finish() throws IOException {
-        if (out instanceof DeflaterOutputStream) {
-            ((DeflaterOutputStream) out).finish();
-        }
-        flush();
-        if (chunkedStream != null) {
-            chunkedStream.finish();
-        }
-    }
-
-    public void setChunkedEncoded(boolean chunked) {
-        out = this.chunkedStream = new ChunkedEncodingOutputStream(out);
     }
 }

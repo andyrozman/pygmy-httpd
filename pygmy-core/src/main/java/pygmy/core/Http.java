@@ -38,9 +38,9 @@ public class Http {
     }
 
     static {
-        codesMap.put(new Integer(100), "Continue");
-        codesMap.put(new Integer(101), "Switching Protocols");
-        codesMap.put(new Integer(200), "OK");
+        codesMap.put(100, "Continue");
+        codesMap.put(101, "Switching Protocols");
+        codesMap.put(200, "OK");
         codesMap.put(new Integer(201), "Created");
         codesMap.put(new Integer(202), "Accepted");
         codesMap.put(new Integer(203), "Non-Authoritative Information");
@@ -71,8 +71,8 @@ public class Http {
         codesMap.put(new Integer(415), "Unsupported Media Type");
         codesMap.put(new Integer(500), "Server Error");
         codesMap.put(new Integer(501), "Not Implemented");
-        codesMap.put(502, "Bad Gateway");
-        codesMap.put(503, "Service Unavailable");
+        codesMap.put(new Integer(502), "Bad Gateway");
+        codesMap.put(new Integer(503), "Service Unavailable");
         codesMap.put(new Integer(504), "Gateway Time-out");
         codesMap.put(new Integer(505), "HTTP Version not supported");
     }
@@ -84,7 +84,7 @@ public class Http {
      * @return A string describing what the HTTP response code is.
      */
     public static String getStatusPhrase(int code) {
-        String phrase = codesMap.get(code);
+        String phrase = (String) codesMap.get(new Integer(code));
         if (phrase == null) {
             return "Error";
         }
@@ -156,7 +156,7 @@ public class Http {
     public static String join(String path, String relativePath) {
         boolean pathEnds = path.endsWith("/");
         boolean relativeStarts = relativePath.startsWith("/");
-        if ((pathEnds && !relativeStarts) || (relativeStarts && !pathEnds)) {
+        if ((pathEnds && !relativeStarts) || (!relativeStarts && pathEnds)) {
             return path + relativePath;
         } else if (pathEnds && relativeStarts) {
             return path + relativePath.substring(1);
@@ -174,18 +174,26 @@ public class Http {
      * @return the a File object representing this URL.
      * @throws UnsupportedEncodingException
      */
-    public static File translatePath(File root, String url) throws UnsupportedEncodingException {
+    public static File translatePath(String root, String url) throws UnsupportedEncodingException {
         String name = URLDecoder.decode(url, "UTF-8");
         name = name.replace('/', File.separatorChar);
-        return new File(root, name);
+        File file = new File(root, name);
+        return file;
     }
 
-    public static boolean isSecure(File root, File file) throws IOException {
+    public static boolean isSecure(String root, File file) throws IOException {
         PermissionCollection rootDirectory;
-        FilePermission fp = new FilePermission(root.getAbsolutePath() + File.separator + "-", "read");
-        rootDirectory = fp.newPermissionCollection();
-        rootDirectory.add(fp);
-        rootDirectory.add(new FilePermission(root.getAbsolutePath(), "read"));
+        if (root.endsWith(File.separator)) {
+            FilePermission fp = new FilePermission(root + "-", "read");
+            rootDirectory = fp.newPermissionCollection();
+            rootDirectory.add(fp);
+            rootDirectory.add(new FilePermission(root.substring(0, root.length() - 1), "read"));
+        } else {
+            FilePermission fp = new FilePermission(root, "read");
+            rootDirectory = fp.newPermissionCollection();
+            rootDirectory.add(fp);
+            rootDirectory.add(new FilePermission(root + File.separator + "-", "read"));
+        }
         return (rootDirectory.implies(new FilePermission(file.getCanonicalPath(), "read")));
     }
 

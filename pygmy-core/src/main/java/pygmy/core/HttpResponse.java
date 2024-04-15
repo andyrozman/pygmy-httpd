@@ -97,14 +97,11 @@ public class HttpResponse extends Response {
 
     public void commitResponse() throws IOException {
         try {
-            String encoding = request.getAcceptedEncoding();
-            boolean compressed = encoding.equalsIgnoreCase("gzip") || encoding.equalsIgnoreCase("x-gzip") || encoding.equalsIgnoreCase("compress") || encoding.equalsIgnoreCase("x-compress");
-
             startTransfer();
             sendHttpReply(statusCode);
-            sendHeaders(mimeType, compressed ? -1 : dataStreamList.getTotalLength());
+            sendHeaders(mimeType, dataStreamList.getTotalLength());
             if (!isHeadMethod()) {
-                sendBody(encoding, compressed);
+                sendBody();
             }
             endTransfer();
         } catch (IOException e) {
@@ -113,12 +110,8 @@ public class HttpResponse extends Response {
         }
     }
 
-    private void sendBody(String encoding, boolean compressed) throws IOException {
-        if (!request.isProtocolVersionLessThan(1, 1) && (dataStreamList.getTotalLength() < 0 || compressed)) {
-            stream.setChunkedEncoded(true);
-        }
-        stream.setEncoding(encoding);
-        dataStreamList.sendData(stream);
+    private void sendBody() throws IOException {
+        dataStreamList.sendData(stream, !request.isProtocolVersionLessThan(1, 1));
     }
 
     private void sendHttpReply(int code) throws IOException {
@@ -135,7 +128,7 @@ public class HttpResponse extends Response {
         responseHeaders.put("Date", Http.getCurrentTime());
         responseHeaders.put("Server", "Pygmy");
         String str = request.isKeepAlive() ? "Keep-Alive" : "close";
-        responseHeaders.put(HttpHeaders.CONNECTION, str);
+        responseHeaders.put(request.getConnectionHeader(), str);
         if (contentLength >= 0) {
             responseHeaders.put("Content-Length", Long.toString(contentLength));
         } else if (!request.isProtocolVersionLessThan(1, 1)) {
@@ -145,9 +138,6 @@ public class HttpResponse extends Response {
         if (mimeType != null) {
             responseHeaders.put("Content-Type", mimeType);
         }
-
-        String encoding = request.getAcceptedEncoding();
-        responseHeaders.put("Content-Encoding", encoding);
         responseHeaders.print(stream);
     }
 
@@ -171,12 +161,11 @@ public class HttpResponse extends Response {
         }
     }
 
-    protected void endTransfer() throws IOException {
+    protected void endTransfer() {
         endTransfer(null);
     }
 
-    protected void endTransfer(Exception e) throws IOException {
-        stream.finish();
+    protected void endTransfer(Exception e) {
         if (responseListener != null) {
             responseListener.endTransfer(request, e);
         }

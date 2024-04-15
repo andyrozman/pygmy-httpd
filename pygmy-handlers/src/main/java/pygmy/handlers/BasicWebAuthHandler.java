@@ -14,11 +14,20 @@ import java.util.Properties;
 /**
  * <p>
  * This handler implements the Basic web authentication protocol outlined in RFC 2617.  This handler sits in front
- * of a set of a Handler to protect it from unauthorized access.  If you need to protect several you can use
- * {@link pygmy.handlers.DefaultChainHandler}.  Everything it's in front of will be protected.
+ * of a set of handlers within a chain see {@link pygmy.handlers.DefaultChainHandler}.  Everything it's in front of
+ * will be protected.  It checks it's url-prefix configuration to know when it should handle a request.  Properties used
+ * for configuring:
  * </p>
- * <p>This handler requires a file containing all of the known users.  You can create a file by running this
- * class' {@link #main(String[])} method.
+ *
+ * <table class="inner">
+ * <tr class="header"><td>Parameter Name</td><td>Explanation</td><td>Default Value</td><td>Required</td></tr>
+ * <tr class="row"><td>url-prefix</td><td>The prefix to filter request urls.</td><td>None</td><td>Yes</td></tr>
+ * <tr class="altrow"><td>realm</td><td>This is the realm reported to the client.  See RFC 2617 for explanation of the realm parameter.</td><td>None</td><td>Yes</td></tr>
+ * <tr class="row"><td>users</td><td>This the path to a file containing all the users and their passwords allowed to access this url.
+ * To create a file you can run this class and hand it the file, username, and password to create.  <b>WARNING</b> do
+ * not put this file in a place where it could be downloaded through this server.</td><td>None</td><td>Yes</td></tr>
+ * </table>
+ *
  * <p>
  * Here is the syntax for running this class to create a password file:
  * </p>
@@ -29,46 +38,29 @@ import java.util.Properties;
  * An existing file can be added to by calling this program again.
  * </p>
  */
-
 @Slf4j
 public class BasicWebAuthHandler extends AbstractHandler implements Handler {
+
     private Properties users;
-    private File usersFile;
-    private String realm;
-    private Handler delegate;
 
-    /**
-     * Creates a Handler that makes sure connections are authenticated before the delegate is allowed
-     * to process them.
-     *
-     * @param realm     This is the realm reported to the client.  See RFC 2617 for explanation of the realm parameter.
-     * @param usersFile This the path to a file containing all the users and their passwords
-     *                  allowed to access this url. To create a file you can run this class and hand it the file, username,
-     *                  and password to create.  <b>WARNING</b> do not put this file in a place where it could be
-     *                  downloaded through this server.
-     * @param delegate  the Handler you want to require authentication on.
-     */
-    public BasicWebAuthHandler(String realm, File usersFile, Handler delegate) {
-        this.realm = realm;
-        this.usersFile = usersFile;
-        this.delegate = delegate;
-    }
+    public static final ConfigOption REALM_OPTION = new ConfigOption("realm", "", "The default realm to authenticate against.");
+    public static final ConfigOption USERS_OPTION = new ConfigOption("users", true, "The file used to authenticate users.");
 
-    public boolean start(Server server) {
-        super.start(server);
+    public boolean initialize(String handlerName, Server server) {
+        super.initialize(handlerName, server);
         this.users = new Properties();
-        return loadProperties() && delegate.start(server);
+        return loadProperties();
     }
 
     private boolean loadProperties() {
-        InputStream is;
+        InputStream is = null;
         try {
-            is = new BufferedInputStream(new FileInputStream(usersFile));
+            is = new BufferedInputStream(new FileInputStream(USERS_OPTION.getProperty(server, handlerName)));
             users.load(is);
             is.close();
             return true;
         } catch (IOException e) {
-            log.error("loadProperties failed due to IOException.", e);
+            log.error("loadProperties failed due to IOException. {}", e.getMessage());
             return false;
         }
     }
@@ -96,7 +88,7 @@ public class BasicWebAuthHandler extends AbstractHandler implements Handler {
             response.sendError(HttpURLConnection.HTTP_INTERNAL_ERROR, Http.getStatusPhrase(HttpURLConnection.HTTP_INTERNAL_ERROR));
             return true;
         }
-        return delegate.handle(request, response);
+        return false;
     }
 
     private boolean isPasswordVerified(String[] credentials) throws NoSuchAlgorithmException {
@@ -104,6 +96,8 @@ public class BasicWebAuthHandler extends AbstractHandler implements Handler {
     }
 
     private boolean askForAuthorization(HttpRequest request, HttpResponse response) {
+        String realm = REALM_OPTION.getProperty(server, handlerName);
+
         response.addHeader("WWW-Authenticate", "Basic realm=\"" + realm + "\"");
         response.sendError(HttpURLConnection.HTTP_UNAUTHORIZED, Http.getStatusPhrase(HttpURLConnection.HTTP_UNAUTHORIZED));
         return true;
@@ -116,16 +110,9 @@ public class BasicWebAuthHandler extends AbstractHandler implements Handler {
         return encoder.encode(md5password);
     }
 
-    /**
-     * Use this method from the command line to create a user file.
-     *
-     * @param args the filename, username, and user's password.
-     * @throws IOException              if some IO error occurs in writing or reading this file.
-     * @throws NoSuchAlgorithmException if the JVM doesn't have the MD5 hash algorithm needed to create the file.
-     */
     public static void main(String[] args) throws IOException, NoSuchAlgorithmException {
         if (args.length < 3) {
-            log.debug("Usage: BasicWebAuthHandler <file> <user> <password>");
+            System.out.println("Usage: BasicWebAuthHandler <file> <user> <password>");
             return;
         }
 
@@ -137,18 +124,18 @@ public class BasicWebAuthHandler extends AbstractHandler implements Handler {
             is.close();
         }
 
-        log.debug("Creating hash for " + args[1]);
+        System.out.println("Creating hash for " + args[1]);
         users.setProperty(args[1], hashPassword(args[2]));
 
-        log.debug("Writing password for " + args[1]);
+        System.out.println("Writing password for " + args[1]);
         OutputStream os = new BufferedOutputStream(new FileOutputStream(userFile));
         users.store(os, "");
         os.flush();
         os.close();
-        log.debug("done");
+        System.out.println("done");
     }
 
     public boolean shutdown(Server server) {
-        return delegate.shutdown(server);
+        return false;
     }
 }

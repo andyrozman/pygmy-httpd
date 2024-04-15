@@ -10,10 +10,11 @@ import java.io.IOException;
  */
 public interface Handler {
 
-    boolean start(Server server);
+    boolean initialize(String handlerName, Server server);
+
+    String getName();
 
     boolean handle(Request request, Response response) throws IOException;
 
     boolean shutdown(Server server);
-
 }
