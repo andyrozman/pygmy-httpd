@@ -2,6 +2,11 @@
 Changelog
 ==========
 
+Version 0.4.2
+-------------
+- ResourceHandler puts to many logs out in info mode (for every accesses resource), changed to debug
+- Server: add starting server log with more friendly message and logging of current version, extended closing log
+
 Version 0.4.1
 -------------
 - ConnectionRunnable: Hiding some IOExceptions (Socket is closed)

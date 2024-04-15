@@ -50,14 +50,14 @@ public class ResourceHandler extends AbstractHandler implements Handler {
         } else if (resource.lastIndexOf('.') < 0) {
             resource += "/" + defaultResource;
         }
-        if (log.isInfoEnabled()) {
-            log.info("Loading resource: " + resource);
+        if (log.isDebugEnabled()) {
+            log.debug("Loading resource: " + resource);
         }
         String mimeType = getMimeType(resource);
         InputStream is = getClass().getResourceAsStream(resource);
 
         if (mimeType == null || is == null) {
-            log.warn("Resource was not found or the mime type was not understood. (Found file=" + (is != null) + ") (Found mime-type=" + (mimeType != null) + ")");
+            log.warn("Resource {} was not found or the mime type was not understood. (Found file={}) (Found mime-type={})", resource, (is != null), (mimeType != null));
             return false;
         }
         response.setMimeType(mimeType);

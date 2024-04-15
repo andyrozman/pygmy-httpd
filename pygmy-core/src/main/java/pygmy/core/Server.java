@@ -98,6 +98,7 @@ public class Server implements Runnable {
     Handler handler = null;
     ResponseListener responseListener = null;
     ThreadPool threadPool;
+    public static final String PYGMY_SERVER_VERSION = "v0.4.2";
 
     private static final String CLAZZ = ".class";
 
@@ -246,6 +247,7 @@ public class Server implements Runnable {
      * done.
      */
     public void start() {
+        log.debug("Starting Pygmy Server ({})", PYGMY_SERVER_VERSION);
         Runtime.getRuntime().addShutdownHook(new Thread(this, "PygmyShutdown"));
         initializeThreads();
         initializeHandler();
@@ -259,6 +261,7 @@ public class Server implements Runnable {
             EndPoint currentEndPoint = (EndPoint) i.next();
             currentEndPoint.start();
         }
+        log.info("Pygmy Server running.");
     }
 
     // copied from old code, might be usefull in the future
@@ -366,7 +369,7 @@ public class Server implements Runnable {
      * This method will shutdown the Handler, and call {@link EndPoint#shutdown} on each EndPoint.
      */
     public void shutdown() {
-        log.debug("Starting shutdown.");
+        log.debug("Starting Pygmy Server shutdown.");
         try {
             threadPool.shutdown();
             if (handler != null) {
@@ -382,7 +385,7 @@ public class Server implements Runnable {
                 }
             }
         } finally {
-            log.info("Shutdown complete.");
+            log.info("Pygmy Server ({}) shutdown complete.", PYGMY_SERVER_VERSION);
         }
     }
 
