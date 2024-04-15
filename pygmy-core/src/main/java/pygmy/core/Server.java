@@ -98,7 +98,7 @@ public class Server implements Runnable {
     Handler handler = null;
     ResponseListener responseListener = null;
     ThreadPool threadPool;
-    public static final String PYGMY_SERVER_VERSION = "v0.4.2";
+    public static final String PYGMY_SERVER_VERSION = "v0.4.3";
 
     private static final String CLAZZ = ".class";
 
