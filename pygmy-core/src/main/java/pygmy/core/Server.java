@@ -261,7 +261,7 @@ public class Server implements Runnable {
             EndPoint currentEndPoint = (EndPoint) i.next();
             currentEndPoint.start();
         }
-        log.info("Pygmy Server running.");
+        log.info("Pygmy Server ({}) running.", PYGMY_SERVER_VERSION);
     }
 
     // copied from old code, might be usefull in the future
