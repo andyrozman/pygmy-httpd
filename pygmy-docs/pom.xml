@@ -4,7 +4,7 @@
     <parent>
         <groupId>com.atech-software.pygmy-httpd</groupId>
         <artifactId>pygmy-httpd</artifactId>
-        <version>0.4.3-SNAPSHOT</version>
+        <version>0.4.4-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
